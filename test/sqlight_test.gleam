@@ -32,5 +32,5 @@ pub fn open_test() {
 
 pub fn open_fail_test() {
   assert Error(sqlight.GenericError) =
-    sqlight.open("file:open_test?mode=wibble")
+    sqlight.open("file:open_fail_test?mode=wibble")
 }
