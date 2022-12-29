@@ -1,6 +1,12 @@
 -module(sqlight_ffi).
 
--export([normalise_result/1, status/0]).
+-export([normalise_result/1, status/0, query/3]).
+
+query(Sql, Connection, Arguments) ->
+    case esqlite3:q(Sql, Connection, Arguments) of
+        Rows -> {ok, lists:map(fun erlang:list_to_tuple/1, Rows)};
+        {error, Code} when is_integer(Code) -> {error, Code}
+    end.
 
 normalise_result(Result) ->
     case Result of

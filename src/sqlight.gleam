@@ -1,6 +1,12 @@
+import gleam/list
 import gleam/result
+import gleam/dynamic.{Decoder, Dynamic}
 
 pub external type Connection
+
+/// A value that can be sent to SQLite as one of the arguments to a
+/// parameterised SQL query.
+pub external type Value
 
 pub type Stats {
   Stats(used: Int, highwater: Int)
@@ -22,6 +28,9 @@ pub type StatusInfo {
 ///
 /// See the SQLite documentation for further details.
 /// <https://sqlite.org/rescode.html>
+///
+/// The `DecoderFailed` error is an addition by this library used to indicate
+/// that the returned rows could not be decoded by the given `Dynamic` decoder.
 ///
 pub type Error {
   Abort
@@ -105,6 +114,11 @@ pub type Error {
   IoerrMmap
   IoerrNomem
   IoerrRdlock
+
+  /// This error is not part of the SQLite error codes, it is used to indicate
+  /// that the returned rows could not be decoded by the given `Dynamic`
+  /// decoder.
+  DecoderFailed(List(dynamic.DecodeError))
 }
 
 external type Charlist
@@ -114,8 +128,12 @@ external type Charlist
 /// See the SQLite documentation for the full list of error codes.
 /// <https://sqlite.org/rescode.html>
 ///
+/// The `DecoderFailed` error is is converted to `GenericError` as it is not an
+/// official SQLite error.
+///
 pub fn error_to_code(error: Error) -> Int {
   case error {
+    GenericError | DecoderFailed(_) -> 1
     Abort -> 4
     Auth -> 23
     Busy -> 5
@@ -124,7 +142,6 @@ pub fn error_to_code(error: Error) -> Int {
     Corrupt -> 11
     Done -> 101
     Empty -> 16
-    GenericError -> 1
     Format -> 24
     Full -> 13
     Internal -> 2
@@ -378,3 +395,29 @@ pub fn with_connection(
 ///
 pub external fn status() -> StatusInfo =
   "sqlight_ffi" "status"
+
+pub fn query(
+  query sql: String,
+  on connection: Connection,
+  with arguments: List(Value),
+  expecting decoder: Decoder(t),
+) -> Result(List(t), Error) {
+  use rows <-
+    result.then(
+      run_query(connection, sql, arguments)
+      |> result.map_error(code_to_error),
+    )
+  use rows <-
+    result.then(
+      list.try_map(over: rows, with: decoder)
+      |> result.map_error(DecoderFailed),
+    )
+  Ok(rows)
+}
+
+external fn run_query(
+  Connection,
+  String,
+  List(Value),
+) -> Result(List(Dynamic), Int) =
+  "sqlight_ffi" "query"

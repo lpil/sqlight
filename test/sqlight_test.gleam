@@ -1,6 +1,7 @@
 import sqlight
 import gleeunit
 import gleeunit/should
+import gleam/dynamic
 import gleam/list
 
 pub fn main() {
@@ -73,4 +74,21 @@ pub fn status_test() {
   assert True = status.pagecache_size.highwater > -1
   assert True = status.malloc_count.used > -1
   assert True = status.malloc_count.highwater > -1
+}
+
+pub fn query_1_test() {
+  use conn <- connect("query_1_test")
+  assert Ok([#(1, 2, 3), #(4, 5, 6)]) =
+    sqlight.query(
+      "select 1, 2, 3 union all select 4, 5, 6",
+      conn,
+      [],
+      dynamic.tuple3(dynamic.int, dynamic.int, dynamic.int),
+    )
+}
+
+pub fn query_2_test() {
+  use conn <- connect("query_2_test")
+  assert Ok([1337]) =
+    sqlight.query("select 1337", conn, [], dynamic.element(0, dynamic.int))
 }
