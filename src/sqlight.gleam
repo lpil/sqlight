@@ -289,6 +289,32 @@ external fn string_to_charlist(String) -> Charlist =
 external fn close_(Connection) -> NilResult =
   "esqlite3" "close"
 
+/// Open a connection to a SQLite database.
+///
+/// URI filenames are supported by SQLite, making it possible to open read-only
+/// databases, in memory databases, and more. Further information about this can
+/// be found in the SQLite documentation: <https://sqlite.org/uri.html>.
+///
+/// # Examples
+///
+/// ## Open "data.db" in the current working directory
+///
+/// ```gleam
+/// assert Ok(conn) = open("file:data.sqlite3")
+/// ```
+/// 
+/// ## Opens "data.db" in read only mode with a private cache
+/// 
+/// ```gleam
+/// assert Ok(conn) = open("file:data.db?mode=ro&cache=private")
+/// ```
+/// 
+/// Opens a shared memory database named memdb1 with a shared cache. 
+/// 
+/// ```gleam
+/// assert Ok(conn) = open("file:memdb1?mode=memory&cache=shared")
+/// ```
+///
 pub fn open(path: String) -> Result(Connection, Error) {
   path
   |> string_to_charlist
@@ -296,9 +322,38 @@ pub fn open(path: String) -> Result(Connection, Error) {
   |> result.map_error(code_to_error)
 }
 
+/// Close a connection to a SQLite database.
+///
+/// Ideally applications should finallise all prepared statements and other open
+/// resources before closing a connection. See the SQLite documentation for more
+/// information: <https://www.sqlite.org/c3ref/close.html>.
+///
 pub fn close(connection: Connection) -> Result(Nil, Error) {
   connection
   |> close_
   |> normalise_result
   |> result.map_error(code_to_error)
+}
+
+/// Open a connection to a SQLite database and execute a function with it, then
+/// close the connection.
+///
+/// This function works well with a `use` expression to automatically close the
+/// connection at the end of a block.
+///
+/// # Examples
+///
+/// ```gleam
+/// use conn = with_connection("file:mydb?mode=memory")
+/// // Use the connection here...
+/// ```
+///
+pub fn with_connection(
+  path: String,
+  f: fn(Connection) -> Result(a, Error),
+) -> Result(a, Error) {
+  use connection <- result.then(open(path))
+  let value = f(connection)
+  use _ <- result.then(close(connection))
+  value
 }

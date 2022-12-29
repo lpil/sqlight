@@ -28,9 +28,19 @@ pub fn errorcode_roundtrip_test() {
 pub fn open_test() {
   assert Ok(conn) = sqlight.open("file:open_test?mode=memory")
   assert Ok(Nil) = sqlight.close(conn)
+
+  // Closing multiple times is OK.
+  assert Ok(Nil) = sqlight.close(conn)
 }
 
 pub fn open_fail_test() {
   assert Error(sqlight.GenericError) =
     sqlight.open("file:open_fail_test?mode=wibble")
+}
+
+pub fn with_db_test() {
+  assert Ok(123) = {
+    use _conn <- sqlight.with_connection("file:with_db_test?mode=memory")
+    Ok(123)
+  }
 }
