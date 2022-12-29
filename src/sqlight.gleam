@@ -2,6 +2,22 @@ import gleam/result
 
 pub external type Connection
 
+pub type Stats {
+  Stats(used: Int, highwater: Int)
+}
+
+pub type StatusInfo {
+  StatusInfo(
+    memory_used: Stats,
+    pagecache_used: Stats,
+    pagecache_overflow: Stats,
+    malloc_size: Stats,
+    parser_stack: Stats,
+    pagecache_size: Stats,
+    malloc_count: Stats,
+  )
+}
+
 /// The errors that SQLite can return.
 ///
 /// See the SQLite documentation for further details.
@@ -357,3 +373,8 @@ pub fn with_connection(
   use _ <- result.then(close(connection))
   value
 }
+
+/// Get all internal status information for SQLite.
+///
+pub external fn status() -> StatusInfo =
+  "sqlight_ffi" "status"

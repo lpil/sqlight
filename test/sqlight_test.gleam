@@ -17,6 +17,17 @@ const codes = [
   2314,
 ]
 
+// Test helper that asserts the database closes after use
+fn connect(
+  name: String,
+  f: fn(sqlight.Connection) -> Result(a, sqlight.Error),
+) -> Result(a, sqlight.Error) {
+  assert Ok(_) = {
+    let uri = "file:" <> name <> "?mode=memory"
+    sqlight.with_connection(uri, f)
+  }
+}
+
 pub fn errorcode_roundtrip_test() {
   use code <- list.each(codes)
   code
@@ -38,9 +49,28 @@ pub fn open_fail_test() {
     sqlight.open("file:open_fail_test?mode=wibble")
 }
 
-pub fn with_db_test() {
+pub fn with_connection_test() {
   assert Ok(123) = {
-    use _conn <- sqlight.with_connection("file:with_db_test?mode=memory")
+    use _conn <-
+      sqlight.with_connection("file:with_connection_test?mode=memory")
     Ok(123)
   }
+}
+
+pub fn status_test() {
+  let status = sqlight.status()
+  assert True = status.memory_used.used > -1
+  assert True = status.memory_used.highwater > -1
+  assert True = status.pagecache_used.used > -1
+  assert True = status.pagecache_used.highwater > -1
+  assert True = status.pagecache_overflow.used > -1
+  assert True = status.pagecache_overflow.highwater > -1
+  assert True = status.malloc_size.used > -1
+  assert True = status.malloc_size.highwater > -1
+  assert True = status.parser_stack.used > -1
+  assert True = status.parser_stack.highwater > -1
+  assert True = status.pagecache_size.used > -1
+  assert True = status.pagecache_size.highwater > -1
+  assert True = status.malloc_count.used > -1
+  assert True = status.malloc_count.highwater > -1
 }
