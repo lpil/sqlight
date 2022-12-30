@@ -4,8 +4,8 @@
 
 query(Sql, Connection, Arguments) ->
     case esqlite3:q(Sql, Connection, Arguments) of
-        Rows -> {ok, lists:map(fun erlang:list_to_tuple/1, Rows)};
-        {error, Code} when is_integer(Code) -> {error, Code}
+        {error, Code} when is_integer(Code) -> {error, Code};
+        Rows -> {ok, lists:map(fun erlang:list_to_tuple/1, Rows)}
     end.
 
 normalise_result(Result) ->
