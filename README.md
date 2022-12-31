@@ -10,6 +10,30 @@ This library is a Gleam wrapper around the excellent Erlang library
 the SQLite C library. It is implemented as a NIF, which means that the SQLite
 database engine is linked to the erlang virtual machine.
 
+```gleam
+pub fn main() {
+  use conn <- sqlight.with_connection(":memory:")
+  let cat_decoder = dynamic.tuple2(dynamic.string, dynamic.int)
+
+  let sql = "
+  create table cats (name text, age int);
+
+  insert into cats (name, age) values 
+  ('Nubi', 4),
+  ('Biffy', 10),
+  ('Ginny', 6);
+  "
+  assert Ok(Nil) = sqlight.exec(sql, conn)
+
+  let sql = "
+  select name, age from cats
+  where age < ?
+  "
+  assert Ok([#("Nubi", 4), #("Ginny", 6)]) =
+    sqlight.query(sql, on: conn, with: [sqlight.int(7)], expecting: cat_decoder)
+}
+```
+
 ## Why SQLite?
 
 SQLite is a implementation of SQL as a library. This means that you don't run a
