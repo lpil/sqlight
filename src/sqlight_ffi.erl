@@ -1,11 +1,19 @@
 -module(sqlight_ffi).
 
--export([normalise_result/1, status/0, query/3, coerce_value/1, null/0]).
+-export([
+    normalise_result/1, status/0, query/3, exec/2, coerce_value/1, null/0
+]).
 
 query(Sql, Connection, Arguments) ->
     case esqlite3:q(Sql, Connection, Arguments) of
         {error, Code} when is_integer(Code) -> {error, Code};
         Rows -> {ok, lists:map(fun erlang:list_to_tuple/1, Rows)}
+    end.
+
+exec(Sql, Connection) ->
+    case esqlite3:exec(Sql, Connection) of
+        {error, Code} when is_integer(Code) -> {error, Code};
+        ok -> {ok, nil}
     end.
 
 normalise_result(Result) ->

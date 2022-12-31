@@ -150,3 +150,16 @@ pub fn bind_null_test() {
       dynamic.element(0, dynamic.optional(dynamic.int)),
     )
 }
+
+pub fn exec_test() {
+  use conn <- connect()
+  assert Ok(Nil) = sqlight.exec("create table cats (name text)", conn)
+  assert Ok(Nil) = sqlight.exec("insert into cats (name) values ('Tim')", conn)
+  assert Ok(["Tim"]) =
+    sqlight.query(
+      "select name from cats",
+      conn,
+      [],
+      dynamic.element(0, dynamic.string),
+    )
+}

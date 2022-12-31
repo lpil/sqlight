@@ -396,8 +396,13 @@ pub fn with_connection(
 pub external fn status() -> StatusInfo =
   "sqlight_ffi" "status"
 
+pub fn exec(sql: String, on connection: Connection) -> Result(Nil, Error) {
+  run_exec(connection, sql)
+  |> result.map_error(code_to_error)
+}
+
 pub fn query(
-  query sql: String,
+  sql: String,
   on connection: Connection,
   with arguments: List(Value),
   expecting decoder: Decoder(t),
@@ -421,6 +426,9 @@ external fn run_query(
   List(Value),
 ) -> Result(List(Dynamic), Int) =
   "sqlight_ffi" "query"
+
+external fn run_exec(Connection, String) -> Result(Nil, Int) =
+  "sqlight_ffi" "exec"
 
 /// Convert a Gleam `Int` to an SQLite int, to be used an argument to a
 /// query.
