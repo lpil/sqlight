@@ -421,3 +421,32 @@ external fn run_query(
   List(Value),
 ) -> Result(List(Dynamic), Int) =
   "sqlight_ffi" "query"
+
+/// Convert a Gleam `Int` to an SQLite int, to be used an argument to a
+/// query.
+///
+pub external fn int(Int) -> Value =
+  "sqlight_ffi" "coerce_value"
+
+/// Convert a Gleam `Float` to an SQLite float, to be used an argument to a
+/// query.
+///
+pub external fn float(Float) -> Value =
+  "sqlight_ffi" "coerce_value"
+
+/// Convert a Gleam `String` to an SQLite text, to be used an argument to a
+/// query.
+///
+pub external fn text(String) -> Value =
+  "sqlight_ffi" "coerce_value"
+
+/// Convert a Gleam `BitString` to an SQLite blob, to be used an argument to a
+/// query.
+///
+pub external fn blob(BitString) -> Value =
+  "sqlight_ffi" "coerce_value"
+
+/// Construct an SQLite null, to be used an argument to a query.
+///
+pub external fn null() -> Value =
+  "sqlight_ffi" "null"

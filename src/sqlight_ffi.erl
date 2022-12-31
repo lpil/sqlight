@@ -1,6 +1,6 @@
 -module(sqlight_ffi).
 
--export([normalise_result/1, status/0, query/3]).
+-export([normalise_result/1, status/0, query/3, coerce_value/1, null/0]).
 
 query(Sql, Connection, Arguments) ->
     case esqlite3:q(Sql, Connection, Arguments) of
@@ -36,3 +36,6 @@ status() ->
         stats(PagecacheSize),
         stats(MallocCount)
     }.
+
+coerce_value(X) -> X.
+null() -> undefined.

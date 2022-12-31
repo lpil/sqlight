@@ -2,6 +2,7 @@ import sqlight
 import gleeunit
 import gleeunit/should
 import gleam/dynamic
+import gleam/option
 import gleam/list
 
 pub fn main() {
@@ -20,13 +21,9 @@ const codes = [
 
 // Test helper that asserts the database closes after use
 fn connect(
-  name: String,
   f: fn(sqlight.Connection) -> Result(a, sqlight.Error),
 ) -> Result(a, sqlight.Error) {
-  assert Ok(_) = {
-    let uri = "file:" <> name <> "?mode=memory"
-    sqlight.with_connection(uri, f)
-  }
+  assert Ok(_) = sqlight.with_connection(":memory:", f)
 }
 
 pub fn errorcode_roundtrip_test() {
@@ -77,7 +74,7 @@ pub fn status_test() {
 }
 
 pub fn query_1_test() {
-  use conn <- connect("query_1_test")
+  use conn <- connect()
   assert Ok([#(1, 2, 3), #(4, 5, 6)]) =
     sqlight.query(
       "select 1, 2, 3 union all select 4, 5, 6",
@@ -88,7 +85,68 @@ pub fn query_1_test() {
 }
 
 pub fn query_2_test() {
-  use conn <- connect("query_2_test")
+  use conn <- connect()
   assert Ok([1337]) =
     sqlight.query("select 1337", conn, [], dynamic.element(0, dynamic.int))
+}
+
+// bind_int/3	
+// bind_float/3	
+// bind_text/3	
+// bind_blob/3	
+// bind_null/2
+
+pub fn bind_int_test() {
+  use conn <- connect()
+  assert Ok([12345]) =
+    sqlight.query(
+      "select ?",
+      conn,
+      [sqlight.int(12_345)],
+      dynamic.element(0, dynamic.int),
+    )
+}
+
+pub fn bind_float_test() {
+  use conn <- connect()
+  assert Ok([12345.6789]) =
+    sqlight.query(
+      "select ?",
+      conn,
+      [sqlight.float(12_345.6789)],
+      dynamic.element(0, dynamic.float),
+    )
+}
+
+pub fn bind_text_test() {
+  use conn <- connect()
+  assert Ok(["hello"]) =
+    sqlight.query(
+      "select ?",
+      conn,
+      [sqlight.text("hello")],
+      dynamic.element(0, dynamic.string),
+    )
+}
+
+pub fn bind_blob_test() {
+  use conn <- connect()
+  assert Ok([<<123, 0>>]) =
+    sqlight.query(
+      "select ?",
+      conn,
+      [sqlight.blob(<<123, 0>>)],
+      dynamic.element(0, dynamic.bit_string),
+    )
+}
+
+pub fn bind_null_test() {
+  use conn <- connect()
+  assert Ok([option.None]) =
+    sqlight.query(
+      "select ?",
+      conn,
+      [sqlight.null()],
+      dynamic.element(0, dynamic.optional(dynamic.int)),
+    )
 }
