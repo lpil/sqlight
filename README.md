@@ -10,6 +10,9 @@ This library is a Gleam wrapper around the excellent Erlang library
 the SQLite C library. It is implemented as a NIF, which means that the SQLite
 database engine is linked to the erlang virtual machine.
 
+```sh
+gleam add sqlight
+```
 ```gleam
 pub fn main() {
   use conn <- sqlight.with_connection(":memory:")
@@ -34,6 +37,8 @@ pub fn main() {
 }
 ```
 
+Documentation can be found at <https://hexdocs.pm/sqlight>.
+
 ## Why SQLite?
 
 SQLite is a implementation of SQL as a library. This means that you don't run a
@@ -44,24 +49,3 @@ supports atomic transactions and it is possible to access the file by multiple
 processes and different programs.
 
 You can also use in-memory databases with SQLite, which may be useful for testing.
-
-## Usage
-
-Add SQLight to your Gleam project:
-
-```sh
-gleam add sqlight
-```
-
-And start making queries:
-
-```gleam
-import sqlight
-
-pub fn main() -> Result(Int, sqlight.Error) {
-  use conn <- sqlight.with_connection("mydb.sqlite3")
-  // TODO: Use the connection
-}
-```
-
-Further documentation can be found at <https://hexdocs.pm/sqlight>.
