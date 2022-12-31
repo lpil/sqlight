@@ -454,7 +454,30 @@ pub external fn text(String) -> Value =
 pub external fn blob(BitString) -> Value =
   "sqlight_ffi" "coerce_value"
 
+/// Convert a Gleam `Bool` to an SQLite int, to be used an argument to a
+/// query.
+///
+/// SQLite does not have a native boolean type. Instead, it uses ints, where 0
+/// is False and 1 is True. Because of this the Gleam stdlib decoder for bools
+/// will not work, instead the `decode_bool` function should be used as it
+/// supports both ints and bools.
+///
+pub fn bool(value: Bool) -> Value {
+  int(case value {
+    True -> 1
+    False -> 0
+  })
+}
+
 /// Construct an SQLite null, to be used an argument to a query.
 ///
 pub external fn null() -> Value =
   "sqlight_ffi" "null"
+
+pub fn decode_bool(value: Dynamic) -> Result(Bool, List(dynamic.DecodeError)) {
+  case dynamic.int(value) {
+    Ok(0) -> Ok(False)
+    Ok(_) -> Ok(True)
+    Error(e) -> Error(e)
+  }
+}

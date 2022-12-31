@@ -151,6 +151,17 @@ pub fn bind_null_test() {
     )
 }
 
+pub fn bind_bool_test() {
+  use conn <- connect()
+  assert Ok([True]) =
+    sqlight.query(
+      "select ?",
+      conn,
+      [sqlight.bool(True)],
+      dynamic.element(0, sqlight.decode_bool),
+    )
+}
+
 pub fn exec_test() {
   use conn <- connect()
   assert Ok(Nil) = sqlight.exec("create table cats (name text)", conn)
@@ -162,6 +173,13 @@ pub fn exec_test() {
       [],
       dynamic.element(0, dynamic.string),
     )
+}
+
+pub fn exec_fail_test() {
+  use conn <- connect()
+  assert Error(sqlight.GenericError) =
+    sqlight.exec("create table cats (name text", conn)
+  Ok(Nil)
 }
 
 pub fn readme_example_test() {

@@ -49,3 +49,10 @@ supports atomic transactions and it is possible to access the file by multiple
 processes and different programs.
 
 You can also use in-memory databases with SQLite, which may be useful for testing.
+
+## On using Bool with SQLite
+
+SQLite does not have a native boolean type. Instead, it uses ints, where 0 is
+False and 1 is True. Because of this the Gleam stdlib decoder for bools will not
+work, instead the `sqlight.decode_bool` function should be used as it supports
+both ints and bools.
