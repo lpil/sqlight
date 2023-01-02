@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.4.0 - 2023-01-02
+
+- The error type now contains more detail.
+
 ## v0.3.0 - 2023-01-02
 
 - the `with_connection` function no longer returns a result.
