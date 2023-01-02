@@ -374,6 +374,10 @@ pub fn close(connection: Connection) -> Result(Nil, Error) {
 /// This function works well with a `use` expression to automatically close the
 /// connection at the end of a block.
 ///
+/// # Crashes
+///
+/// This function crashes if the connection cannot be opened or closed.
+///
 /// # Examples
 ///
 /// ```gleam
@@ -381,13 +385,10 @@ pub fn close(connection: Connection) -> Result(Nil, Error) {
 /// // Use the connection here...
 /// ```
 ///
-pub fn with_connection(
-  path: String,
-  f: fn(Connection) -> Result(a, Error),
-) -> Result(a, Error) {
-  use connection <- result.then(open(path))
+pub fn with_connection(path: String, f: fn(Connection) -> a) -> a {
+  assert Ok(connection) = open(path)
   let value = f(connection)
-  use _ <- result.then(close(connection))
+  assert Ok(_) = close(connection)
   value
 }
 
