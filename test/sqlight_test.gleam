@@ -1,4 +1,4 @@
-import sqlight
+import sqlight.{SqlightError}
 import gleeunit
 import gleeunit/should
 import gleam/dynamic
@@ -29,8 +29,8 @@ fn connect(
 pub fn errorcode_roundtrip_test() {
   use code <- list.each(codes)
   code
-  |> sqlight.code_to_error
-  |> sqlight.error_to_code
+  |> sqlight.error_code_from_int
+  |> sqlight.error_code_to_int
   |> should.equal(code)
 }
 
@@ -43,7 +43,7 @@ pub fn open_test() {
 }
 
 pub fn open_fail_test() {
-  assert Error(sqlight.GenericError) =
+  assert Error(SqlightError(sqlight.GenericError, "", -1)) =
     sqlight.open("file:open_fail_test?mode=wibble")
 }
 
@@ -89,12 +89,6 @@ pub fn query_2_test() {
   assert Ok([1337]) =
     sqlight.query("select 1337", conn, [], dynamic.element(0, dynamic.int))
 }
-
-// bind_int/3	
-// bind_float/3	
-// bind_text/3	
-// bind_blob/3	
-// bind_null/2
 
 pub fn bind_int_test() {
   use conn <- connect()
@@ -177,7 +171,7 @@ pub fn exec_test() {
 
 pub fn exec_fail_test() {
   use conn <- connect()
-  assert Error(sqlight.GenericError) =
+  assert Error(SqlightError(sqlight.GenericError, "incomplete input", -1)) =
     sqlight.exec("create table cats (name text", conn)
   Ok(Nil)
 }
@@ -204,4 +198,67 @@ pub fn readme_example_test() {
   "
   assert Ok([#("Nubi", 4), #("Ginny", 6)]) =
     sqlight.query(sql, on: conn, with: [sqlight.int(7)], expecting: cat_decoder)
+}
+
+pub fn error_syntax_error_test() {
+  use conn <- sqlight.with_connection(":memory:")
+  assert Error(SqlightError(sqlight.GenericError, "incomplete input", -1)) =
+    sqlight.exec("create table cats (name text", conn)
+}
+
+pub fn error_info_foreign_key_test() {
+  use conn <- sqlight.with_connection(":memory:")
+  assert Ok(_) =
+    sqlight.exec(
+      "
+  pragma foreign_keys = on;
+
+  create table users (
+    id integer primary key autoincrement
+  ) strict;
+
+  create table posts (
+    id integer primary key autoincrement,
+    user_id integer not null,
+
+    foreign key (user_id) references users(id)
+  ) strict;
+  ",
+      conn,
+    )
+  assert Error(SqlightError(
+    sqlight.ConstraintForeignkey,
+    "FOREIGN KEY constraint failed",
+    -1,
+  )) = sqlight.exec("insert into posts (user_id) values (1)", conn)
+}
+
+pub fn error_info_null_constraint_test() {
+  use conn <- sqlight.with_connection(":memory:")
+  assert Ok(_) =
+    sqlight.exec(
+      "
+  pragma foreign_keys = on;
+
+  create table users (
+    id integer primary key autoincrement,
+    name text not null
+  ) strict;
+  ",
+      conn,
+    )
+  assert Error(SqlightError(
+    sqlight.ConstraintNotnull,
+    "NOT NULL constraint failed: users.name",
+    -1,
+  )) = sqlight.exec("insert into users default values;", conn)
+}
+
+pub fn decode_error_test() {
+  use conn <- sqlight.with_connection(":memory:")
+  assert Error(SqlightError(
+    sqlight.GenericError,
+    "Decoder failed, expected String, got Int in 0",
+    -1,
+  )) = sqlight.query("select 1", conn, [], dynamic.element(0, dynamic.string))
 }

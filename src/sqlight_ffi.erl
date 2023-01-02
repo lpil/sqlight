@@ -1,7 +1,8 @@
 -module(sqlight_ffi).
 
 -export([
-    normalise_result/1, status/0, query/3, exec/2, coerce_value/1, null/0
+    normalise_result/1, status/0, query/3, exec/2, coerce_value/1, null/0,
+    error_info/1
 ]).
 
 query(Sql, Connection, Arguments) ->
@@ -47,3 +48,7 @@ status() ->
 
 coerce_value(X) -> X.
 null() -> undefined.
+
+error_info(Connection) ->
+    #{errmsg := Message, error_offset := Offset} = esqlite3:error_info(Connection),
+    {Message, Offset}.

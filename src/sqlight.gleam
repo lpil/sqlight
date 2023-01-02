@@ -1,4 +1,5 @@
 import gleam/list
+import gleam/string
 import gleam/result
 import gleam/dynamic.{Decoder, Dynamic}
 
@@ -24,15 +25,23 @@ pub type StatusInfo {
   )
 }
 
+pub type Error {
+  SqlightError(
+    code: ErrorCode,
+    message: String,
+    /// If the most recent error references a specific token in the input SQL,
+    /// this is the byte offset of the start of that token. 
+    /// If the most recent error does not reference a specific token, this is -1.
+    offset: Int,
+  )
+}
+
 /// The errors that SQLite can return.
 ///
 /// See the SQLite documentation for further details.
 /// <https://sqlite.org/rescode.html>
 ///
-/// The `DecoderFailed` error is an addition by this library used to indicate
-/// that the returned rows could not be decoded by the given `Dynamic` decoder.
-///
-pub type Error {
+pub type ErrorCode {
   Abort
   Auth
   Busy
@@ -114,11 +123,6 @@ pub type Error {
   IoerrMmap
   IoerrNomem
   IoerrRdlock
-
-  /// This error is not part of the SQLite error codes, it is used to indicate
-  /// that the returned rows could not be decoded by the given `Dynamic`
-  /// decoder.
-  DecoderFailed(List(dynamic.DecodeError))
 }
 
 external type Charlist
@@ -128,12 +132,9 @@ external type Charlist
 /// See the SQLite documentation for the full list of error codes.
 /// <https://sqlite.org/rescode.html>
 ///
-/// The `DecoderFailed` error is is converted to `GenericError` as it is not an
-/// official SQLite error.
-///
-pub fn error_to_code(error: Error) -> Int {
+pub fn error_code_to_int(error: ErrorCode) -> Int {
   case error {
-    GenericError | DecoderFailed(_) -> 1
+    GenericError -> 1
     Abort -> 4
     Auth -> 23
     Busy -> 5
@@ -221,7 +222,7 @@ pub fn error_to_code(error: Error) -> Int {
 ///
 /// If the code is not a known error code, `GenericError` is returned.
 ///
-pub fn code_to_error(code: Int) -> Error {
+pub fn error_code_from_int(code: Int) -> ErrorCode {
   case code {
     4 -> Abort
     23 -> Auth
@@ -352,7 +353,9 @@ pub fn open(path: String) -> Result(Connection, Error) {
   path
   |> string_to_charlist
   |> open_
-  |> result.map_error(code_to_error)
+  |> result.map_error(fn(i) {
+    SqlightError(code: error_code_from_int(i), message: "", offset: -1)
+  })
 }
 
 /// Close a connection to a SQLite database.
@@ -365,7 +368,7 @@ pub fn close(connection: Connection) -> Result(Nil, Error) {
   connection
   |> close_
   |> normalise_result
-  |> result.map_error(code_to_error)
+  |> result.map_error(construct_error(connection, _))
 }
 
 /// Open a connection to a SQLite database and execute a function with it, then
@@ -399,7 +402,7 @@ pub external fn status() -> StatusInfo =
 
 pub fn exec(sql: String, on connection: Connection) -> Result(Nil, Error) {
   run_exec(connection, sql)
-  |> result.map_error(code_to_error)
+  |> result.map_error(construct_error(connection, _))
 }
 
 pub fn query(
@@ -411,12 +414,12 @@ pub fn query(
   use rows <-
     result.then(
       run_query(connection, sql, arguments)
-      |> result.map_error(code_to_error),
+      |> result.map_error(construct_error(connection, _)),
     )
   use rows <-
     result.then(
       list.try_map(over: rows, with: decoder)
-      |> result.map_error(DecoderFailed),
+      |> result.map_error(decode_error),
     )
   Ok(rows)
 }
@@ -481,4 +484,26 @@ pub fn decode_bool(value: Dynamic) -> Result(Bool, List(dynamic.DecodeError)) {
     Ok(_) -> Ok(True)
     Error(e) -> Error(e)
   }
+}
+
+/// Return a description of the last occurred error.
+///
+external fn error_info(Connection) -> #(String, Int) =
+  "sqlight_ffi" "error_info"
+
+fn construct_error(connection: Connection, error_code: Int) -> Error {
+  let #(message, offset) = error_info(connection)
+  SqlightError(
+    code: error_code_from_int(error_code),
+    message: message,
+    offset: offset,
+  )
+}
+
+fn decode_error(errors: List(dynamic.DecodeError)) -> Error {
+  assert [dynamic.DecodeError(expected, actual, path), ..] = errors
+  let path = string.join(path, ".")
+  let message =
+    "Decoder failed, expected " <> expected <> ", got " <> actual <> " in " <> path
+  SqlightError(code: GenericError, message: message, offset: -1)
 }
