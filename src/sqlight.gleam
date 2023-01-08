@@ -29,6 +29,9 @@ pub type Error {
 /// See the SQLite documentation for further details.
 /// <https://sqlite.org/rescode.html>
 ///
+/// When running on JavaScript with Deno only a less-detailed subset of these
+/// will be used as the underlying library does not expose extended error codes.
+///
 pub type ErrorCode {
   Abort
   Auth
