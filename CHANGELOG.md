@@ -1,8 +1,8 @@
 # Changelog
 
-## v0.4.0 - 2023-01-08
+## v0.5.0 - 2023-01-08
 
-- 
+- This library now works on JavaScript with the Deno runtime. 
 - The `status` function has been removed.
 
 ## v0.4.0 - 2023-01-02
