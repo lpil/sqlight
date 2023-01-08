@@ -5,10 +5,7 @@
 
 Use [SQLite](https://www.sqlite.org/index.html) from Gleam!
 
-This library is a Gleam wrapper around the excellent Erlang library
-[esqlite](https://hex.pm/packages/esqlite), which in turn is a wrapper around
-the SQLite C library. It is implemented as a NIF, which means that the SQLite
-database engine is linked to the erlang virtual machine.
+Works on Erlang or JavaScript running on Deno.
 
 ```sh
 gleam add sqlight
@@ -49,6 +46,17 @@ supports atomic transactions and it is possible to access the file by multiple
 processes and different programs.
 
 You can also use in-memory databases with SQLite, which may be useful for testing.
+
+## Implementation
+
+When running on Erlang is library wrapper around the excellent Erlang library
+[esqlite](https://hex.pm/packages/esqlite), which in turn is a wrapper around
+the SQLite C library. It is implemented as a NIF, which means that the SQLite
+database engine is linked to the erlang virtual machine.
+
+When running on Deno it is a wrapper around the excellent
+[x/sqlite](https://deno.land/x/sqlite@v3.7.0) library, which in turn is a
+wrapper around the SQLite C library compiled to WASM.
 
 ## On using Bool with SQLite
 
