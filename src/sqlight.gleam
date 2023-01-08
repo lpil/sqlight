@@ -13,18 +13,6 @@ pub type Stats {
   Stats(used: Int, highwater: Int)
 }
 
-pub type StatusInfo {
-  StatusInfo(
-    memory_used: Stats,
-    pagecache_used: Stats,
-    pagecache_overflow: Stats,
-    malloc_size: Stats,
-    parser_stack: Stats,
-    pagecache_size: Stats,
-    malloc_count: Stats,
-  )
-}
-
 pub type Error {
   SqlightError(
     code: ErrorCode,
@@ -124,8 +112,6 @@ pub type ErrorCode {
   IoerrNomem
   IoerrRdlock
 }
-
-external type Charlist
 
 /// Convert an `Error` to an error code int.
 ///
@@ -309,19 +295,21 @@ pub fn error_code_from_int(code: Int) -> ErrorCode {
   }
 }
 
-external type NilResult
+if erlang {
+  external fn open_(String) -> Result(Connection, Error) =
+    "sqlight_ffi" "open"
 
-external fn open_(Charlist) -> Result(Connection, Int) =
-  "esqlite3" "open"
+  external fn close_(Connection) -> Result(Nil, Error) =
+    "sqlight_ffi" "close"
+}
 
-external fn normalise_result(NilResult) -> Result(Nil, Int) =
-  "sqlight_ffi" "normalise_result"
+if javascript {
+  external fn open_(String) -> Result(Connection, Error) =
+    "./sqlight_ffi.js" "open"
 
-external fn string_to_charlist(String) -> Charlist =
-  "unicode" "characters_to_list"
-
-external fn close_(Connection) -> NilResult =
-  "esqlite3" "close"
+  external fn close_(Connection) -> Result(Nil, Error) =
+    "./sqlight_ffi.js" "close"
+}
 
 /// Open a connection to a SQLite database.
 ///
@@ -350,12 +338,7 @@ external fn close_(Connection) -> NilResult =
 /// ```
 ///
 pub fn open(path: String) -> Result(Connection, Error) {
-  path
-  |> string_to_charlist
-  |> open_
-  |> result.map_error(fn(i) {
-    SqlightError(code: error_code_from_int(i), message: "", offset: -1)
-  })
+  open_(path)
 }
 
 /// Close a connection to a SQLite database.
@@ -365,10 +348,7 @@ pub fn open(path: String) -> Result(Connection, Error) {
 /// information: <https://www.sqlite.org/c3ref/close.html>.
 ///
 pub fn close(connection: Connection) -> Result(Nil, Error) {
-  connection
-  |> close_
-  |> normalise_result
-  |> result.map_error(construct_error(connection, _))
+  close_(connection)
 }
 
 /// Open a connection to a SQLite database and execute a function with it, then
@@ -395,14 +375,8 @@ pub fn with_connection(path: String, f: fn(Connection) -> a) -> a {
   value
 }
 
-/// Get all internal status information for SQLite.
-///
-pub external fn status() -> StatusInfo =
-  "sqlight_ffi" "status"
-
 pub fn exec(sql: String, on connection: Connection) -> Result(Nil, Error) {
-  run_exec(connection, sql)
-  |> result.map_error(construct_error(connection, _))
+  exec_(sql, connection)
 }
 
 pub fn query(
@@ -411,11 +385,7 @@ pub fn query(
   with arguments: List(Value),
   expecting decoder: Decoder(t),
 ) -> Result(List(t), Error) {
-  use rows <-
-    result.then(
-      run_query(connection, sql, arguments)
-      |> result.map_error(construct_error(connection, _)),
-    )
+  use rows <- result.then(run_query(connection, sql, arguments))
   use rows <-
     result.then(
       list.try_map(over: rows, with: decoder)
@@ -424,39 +394,81 @@ pub fn query(
   Ok(rows)
 }
 
-external fn run_query(
-  Connection,
-  String,
-  List(Value),
-) -> Result(List(Dynamic), Int) =
-  "sqlight_ffi" "query"
+if erlang {
+  external fn run_query(
+    Connection,
+    String,
+    List(Value),
+  ) -> Result(List(Dynamic), Error) =
+    "sqlight_ffi" "query"
+}
 
-external fn run_exec(Connection, String) -> Result(Nil, Int) =
-  "sqlight_ffi" "exec"
+if javascript {
+  external fn run_query(
+    Connection,
+    String,
+    List(Value),
+  ) -> Result(List(Dynamic), Error) =
+    "./sqlight_ffi.js" "query"
+}
+
+if erlang {
+  external fn coerce_value(a) -> Value =
+    "sqlight_ffi" "coerce_value"
+}
+
+if javascript {
+  external fn coerce_value(a) -> Value =
+    "./sqlight_ffi.js" "coerce_value"
+}
+
+if erlang {
+  external fn exec_(String, Connection) -> Result(Nil, Error) =
+    "sqlight_ffi" "exec"
+}
+
+if javascript {
+  external fn exec_(String, Connection) -> Result(Nil, Error) =
+    "./sqlight_ffi.js" "exec"
+}
 
 /// Convert a Gleam `Int` to an SQLite int, to be used an argument to a
 /// query.
 ///
-pub external fn int(Int) -> Value =
-  "sqlight_ffi" "coerce_value"
+pub fn int(value: Int) -> Value {
+  coerce_value(value)
+}
 
 /// Convert a Gleam `Float` to an SQLite float, to be used an argument to a
 /// query.
 ///
-pub external fn float(Float) -> Value =
-  "sqlight_ffi" "coerce_value"
+pub fn float(value: Float) -> Value {
+  coerce_value(value)
+}
 
 /// Convert a Gleam `String` to an SQLite text, to be used an argument to a
 /// query.
 ///
-pub external fn text(String) -> Value =
-  "sqlight_ffi" "coerce_value"
+pub fn text(value: String) -> Value {
+  coerce_value(value)
+}
 
 /// Convert a Gleam `BitString` to an SQLite blob, to be used an argument to a
 /// query.
 ///
-pub external fn blob(BitString) -> Value =
-  "sqlight_ffi" "coerce_value"
+pub fn blob(value: BitString) -> Value {
+  coerce_blob(value)
+}
+
+if erlang {
+  external fn coerce_blob(BitString) -> Value =
+    "sqlight_ffi" "coerce_value"
+}
+
+if javascript {
+  external fn coerce_blob(BitString) -> Value =
+    "./sqlight_ffi.js" "coerce_blob"
+}
 
 /// Convert a Gleam `Bool` to an SQLite int, to be used an argument to a
 /// query.
@@ -473,10 +485,19 @@ pub fn bool(value: Bool) -> Value {
   })
 }
 
-/// Construct an SQLite null, to be used an argument to a query.
-///
-pub external fn null() -> Value =
-  "sqlight_ffi" "null"
+if erlang {
+  /// Construct an SQLite null, to be used an argument to a query.
+  ///
+  pub external fn null() -> Value =
+    "sqlight_ffi" "null"
+}
+
+if javascript {
+  /// Construct an SQLite null, to be used an argument to a query.
+  ///
+  pub external fn null() -> Value =
+    "./sqlight_ffi.js" "null_"
+}
 
 pub fn decode_bool(value: Dynamic) -> Result(Bool, List(dynamic.DecodeError)) {
   case dynamic.int(value) {
@@ -484,20 +505,6 @@ pub fn decode_bool(value: Dynamic) -> Result(Bool, List(dynamic.DecodeError)) {
     Ok(_) -> Ok(True)
     Error(e) -> Error(e)
   }
-}
-
-/// Return a description of the last occurred error.
-///
-external fn error_info(Connection) -> #(String, Int) =
-  "sqlight_ffi" "error_info"
-
-fn construct_error(connection: Connection, error_code: Int) -> Error {
-  let #(message, offset) = error_info(connection)
-  SqlightError(
-    code: error_code_from_int(error_code),
-    message: message,
-    offset: offset,
-  )
 }
 
 fn decode_error(errors: List(dynamic.DecodeError)) -> Error {

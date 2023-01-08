@@ -1,26 +1,34 @@
 -module(sqlight_ffi).
 
 -export([
-    normalise_result/1, status/0, query/3, exec/2, coerce_value/1, null/0,
-    error_info/1
+    status/0, query/3, exec/2, coerce_value/1, null/0, open/1, close/1
 ]).
+
+open(Name) ->
+    case esqlite3:open(unicode:characters_to_list(Name)) of
+        {ok, Connection} -> {ok, Connection};
+        {error, Code} -> 
+            Code1 = sqlight:error_code_from_int(Code),
+            {error, {sqlight_error, Code1, <<>>, -1}}
+    end.
+
+close(Connection) ->
+    case esqlite3:close(Connection) of
+        ok -> {ok, nil};
+        {error, Code} -> to_error(Connection, Code)
+    end.
 
 query(Sql, Connection, Arguments) ->
     case esqlite3:q(Sql, Connection, Arguments) of
-        {error, Code} when is_integer(Code) -> {error, Code};
+        {error, Code} -> 
+            to_error(Connection, Code);
         Rows -> {ok, lists:map(fun erlang:list_to_tuple/1, Rows)}
     end.
 
 exec(Sql, Connection) ->
-    case esqlite3:exec(Sql, Connection) of
-        {error, Code} when is_integer(Code) -> {error, Code};
+    case esqlite3:exec(Connection, Sql) of
+        {error, Code} -> to_error(Connection, Code);
         ok -> {ok, nil}
-    end.
-
-normalise_result(Result) ->
-    case Result of
-        ok -> {ok, nil};
-        {error, Code} when is_integer(Code) -> {error, Code}
     end.
 
 stats(#{used := Used, highwater := Highwater}) ->
@@ -49,6 +57,9 @@ status() ->
 coerce_value(X) -> X.
 null() -> undefined.
 
-error_info(Connection) ->
+to_error(Connection = {esqlite3, _}, Code) when is_integer(Code) ->
     #{errmsg := Message, error_offset := Offset} = esqlite3:error_info(Connection),
-    {Message, Offset}.
+    Error = {sqlight_error, sqlight:error_code_from_int(Code), Message, Offset},
+    {error, Error};
+to_error(Connection, Code) ->
+    erlang:throw({fail, Connection, Code}).

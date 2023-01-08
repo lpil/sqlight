@@ -4,10 +4,10 @@
 packages = [
   { name = "esqlite", version = "0.8.5", build_tools = ["rebar3"], requirements = [], otp_app = "esqlite", source = "hex", outer_checksum = "75F0DCAB190A09842B1D9305765C026D8AA2ED7C98EFF272DFB529CAC99B0742" },
   { name = "gleam_stdlib", version = "0.25.0", build_tools = ["gleam"], requirements = [], otp_app = "gleam_stdlib", source = "hex", outer_checksum = "AD0F89928E0B919C8F8EDF640484633B28DBF88630A9E6AE504617A3E3E5B9A2" },
-  { name = "gleeunit", version = "0.8.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleeunit", source = "hex", outer_checksum = "A1170754BF54F5DD6E9EF392FB1DC612528B007CCBE41B52F0C5453254708490" },
+  { name = "gleeunit", version = "0.9.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleeunit", source = "hex", outer_checksum = "37F8904B6844A99A2C041E56B2E08D464AC2529E68EB0A3FA4AD93745E0A3A59" },
 ]
 
 [requirements]
 esqlite = "~> 0.8"
 gleam_stdlib = "~> 0.25"
-gleeunit = "~> 0.7"
+gleeunit = "~> 0.8"

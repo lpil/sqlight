@@ -19,11 +19,8 @@ const codes = [
   2314,
 ]
 
-// Test helper that asserts the database closes after use
-fn connect(
-  f: fn(sqlight.Connection) -> Result(a, sqlight.Error),
-) -> Result(a, sqlight.Error) {
-  assert Ok(_) = sqlight.with_connection(":memory:", f)
+fn connect(f: fn(sqlight.Connection) -> a) -> a {
+  sqlight.with_connection(":memory:", f)
 }
 
 pub fn errorcode_roundtrip_test() {
@@ -35,42 +32,24 @@ pub fn errorcode_roundtrip_test() {
 }
 
 pub fn open_test() {
-  assert Ok(conn) = sqlight.open("file:open_test?mode=memory")
+  assert Ok(conn) = sqlight.open("")
   assert Ok(Nil) = sqlight.close(conn)
 
   // Closing multiple times is OK.
   assert Ok(Nil) = sqlight.close(conn)
 }
 
-pub fn open_fail_test() {
-  assert Error(SqlightError(sqlight.GenericError, "", -1)) =
-    sqlight.open("file:open_fail_test?mode=wibble")
+if erlang {
+  pub fn open_fail_test() {
+    assert Error(SqlightError(sqlight.Cantopen, "", -1)) = sqlight.open("tmp")
+  }
 }
 
 pub fn with_connection_test() {
   assert Ok(123) = {
-    use _conn <-
-      sqlight.with_connection("file:with_connection_test?mode=memory")
+    use _conn <- sqlight.with_connection("")
     Ok(123)
   }
-}
-
-pub fn status_test() {
-  let status = sqlight.status()
-  assert True = status.memory_used.used > -1
-  assert True = status.memory_used.highwater > -1
-  assert True = status.pagecache_used.used > -1
-  assert True = status.pagecache_used.highwater > -1
-  assert True = status.pagecache_overflow.used > -1
-  assert True = status.pagecache_overflow.highwater > -1
-  assert True = status.malloc_size.used > -1
-  assert True = status.malloc_size.highwater > -1
-  assert True = status.parser_stack.used > -1
-  assert True = status.parser_stack.highwater > -1
-  assert True = status.pagecache_size.used > -1
-  assert True = status.pagecache_size.highwater > -1
-  assert True = status.malloc_count.used > -1
-  assert True = status.malloc_count.highwater > -1
 }
 
 pub fn query_1_test() {
@@ -92,7 +71,7 @@ pub fn query_2_test() {
 
 pub fn bind_int_test() {
   use conn <- connect()
-  assert Ok([12345]) =
+  assert Ok([12_345]) =
     sqlight.query(
       "select ?",
       conn,
@@ -103,7 +82,7 @@ pub fn bind_int_test() {
 
 pub fn bind_float_test() {
   use conn <- connect()
-  assert Ok([12345.6789]) =
+  assert Ok([12_345.6789]) =
     sqlight.query(
       "select ?",
       conn,
@@ -123,15 +102,19 @@ pub fn bind_text_test() {
     )
 }
 
-pub fn bind_blob_test() {
-  use conn <- connect()
-  assert Ok([<<123, 0>>]) =
-    sqlight.query(
-      "select ?",
-      conn,
-      [sqlight.blob(<<123, 0>>)],
-      dynamic.element(0, dynamic.bit_string),
-    )
+if erlang {
+  // TODO: enable this for JS once Gleam v0.26 is out
+
+  pub fn bind_blob_test() {
+    use conn <- connect()
+    assert Ok([<<123, 0>>]) =
+      sqlight.query(
+        "select ?",
+        conn,
+        [sqlight.blob(<<123, 0>>)],
+        dynamic.element(0, dynamic.bit_string),
+      )
+  }
 }
 
 pub fn bind_null_test() {
@@ -226,11 +209,12 @@ pub fn error_info_foreign_key_test() {
   ",
       conn,
     )
-  assert Error(SqlightError(
-    sqlight.ConstraintForeignkey,
-    "FOREIGN KEY constraint failed",
-    -1,
-  )) = sqlight.exec("insert into posts (user_id) values (1)", conn)
+  assert Error(SqlightError(code, "FOREIGN KEY constraint failed", -1)) =
+    sqlight.exec("insert into posts (user_id) values (1)", conn)
+
+  // On Deno we do not have extended error codes so the information here is less precise.
+  assert True =
+    code == sqlight.ConstraintForeignkey || code == sqlight.Constraint
 }
 
 pub fn error_info_null_constraint_test() {
@@ -247,11 +231,11 @@ pub fn error_info_null_constraint_test() {
   ",
       conn,
     )
-  assert Error(SqlightError(
-    sqlight.ConstraintNotnull,
-    "NOT NULL constraint failed: users.name",
-    -1,
-  )) = sqlight.exec("insert into users default values;", conn)
+  assert Error(SqlightError(code, "NOT NULL constraint failed: users.name", -1)) =
+    sqlight.exec("insert into users default values;", conn)
+
+  // On Deno we do not have extended error codes so the information here is less precise.
+  assert True = sqlight.ConstraintNotnull == code || sqlight.Constraint == code
 }
 
 pub fn decode_error_test() {

@@ -9,9 +9,23 @@ links = [
   { title = "Sponsor", href = "https://github.com/sponsors/lpil" },
 ]
 
+[javascript]
+runtime = "deno"
+
+[javascript.deno]
+allow_read = [
+  "gleam.toml",
+  "test",
+  "build",
+  "tmp",
+]
+allow_write = [
+  "tmp",
+]
+
 [dependencies]
 gleam_stdlib = "~> 0.25"
 esqlite = "~> 0.8"
 
 [dev-dependencies]
-gleeunit = "~> 0.7"
+gleeunit = "~> 0.8"

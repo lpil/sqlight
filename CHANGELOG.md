@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.4.0 - 2023-01-08
+
+- 
+- The `status` function has been removed.
+
 ## v0.4.0 - 2023-01-02
 
 - The error type now contains more detail.
