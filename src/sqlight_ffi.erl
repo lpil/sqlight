@@ -18,10 +18,9 @@ close(Connection) ->
         {error, Code} -> to_error(Connection, Code)
     end.
 
-query(Sql, Connection, Arguments) ->
-    case esqlite3:q(Sql, Connection, Arguments) of
-        {error, Code} -> 
-            to_error(Connection, Code);
+query(Sql, Connection, Arguments) when is_binary(Sql) ->
+    case esqlite3:q(Connection, Sql, Arguments) of
+        {error, Code} -> to_error(Connection, Code);
         Rows -> {ok, lists:map(fun erlang:list_to_tuple/1, Rows)}
     end.
 
@@ -60,6 +59,4 @@ null() -> undefined.
 to_error(Connection = {esqlite3, _}, Code) when is_integer(Code) ->
     #{errmsg := Message, error_offset := Offset} = esqlite3:error_info(Connection),
     Error = {sqlight_error, sqlight:error_code_from_int(Code), Message, Offset},
-    {error, Error};
-to_error(Connection, Code) ->
-    erlang:throw({fail, Connection, Code}).
+    {error, Error}.

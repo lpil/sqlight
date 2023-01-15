@@ -246,3 +246,15 @@ pub fn decode_error_test() {
     -1,
   )) = sqlight.query("select 1", conn, [], dynamic.element(0, dynamic.string))
 }
+
+pub fn query_error_test() {
+  use conn <- sqlight.with_connection(":memory:")
+
+  assert Error(SqlightError(sqlight.GenericError, _, _)) =
+    sqlight.query(
+      "this isn't a valid query",
+      conn,
+      [],
+      dynamic.element(0, dynamic.int),
+    )
+}

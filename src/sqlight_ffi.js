@@ -33,7 +33,7 @@ export function exec(sql, connection) {
   }
 }
 
-export function query(connection, sql, parameters) {
+export function query(sql, connection, parameters) {
   let rows;
   try {
     rows = connection.query(sql, parameters.toArray());

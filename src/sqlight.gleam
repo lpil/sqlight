@@ -388,19 +388,18 @@ pub fn query(
   with arguments: List(Value),
   expecting decoder: Decoder(t),
 ) -> Result(List(t), Error) {
-  use rows <- result.then(run_query(connection, sql, arguments))
-  use rows <-
-    result.then(
-      list.try_map(over: rows, with: decoder)
-      |> result.map_error(decode_error),
-    )
+  use rows <- result.then(run_query(sql, connection, arguments))
+  use rows <- result.then(
+    list.try_map(over: rows, with: decoder)
+    |> result.map_error(decode_error),
+  )
   Ok(rows)
 }
 
 if erlang {
   external fn run_query(
-    Connection,
     String,
+    Connection,
     List(Value),
   ) -> Result(List(Dynamic), Error) =
     "sqlight_ffi" "query"
@@ -408,8 +407,8 @@ if erlang {
 
 if javascript {
   external fn run_query(
-    Connection,
     String,
+    Connection,
     List(Value),
   ) -> Result(List(Dynamic), Error) =
     "./sqlight_ffi.js" "query"
