@@ -325,19 +325,19 @@ if javascript {
 /// ## Open "data.db" in the current working directory
 ///
 /// ```gleam
-/// assert Ok(conn) = open("file:data.sqlite3")
+/// let assert Ok(conn) = open("file:data.sqlite3")
 /// ```
 /// 
 /// ## Opens "data.db" in read only mode with a private cache
 /// 
 /// ```gleam
-/// assert Ok(conn) = open("file:data.db?mode=ro&cache=private")
+/// let assert Ok(conn) = open("file:data.db?mode=ro&cache=private")
 /// ```
 /// 
 /// Opens a shared memory database named memdb1 with a shared cache. 
 /// 
 /// ```gleam
-/// assert Ok(conn) = open("file:memdb1?mode=memory&cache=shared")
+/// let assert Ok(conn) = open("file:memdb1?mode=memory&cache=shared")
 /// ```
 ///
 pub fn open(path: String) -> Result(Connection, Error) {
@@ -372,9 +372,9 @@ pub fn close(connection: Connection) -> Result(Nil, Error) {
 /// ```
 ///
 pub fn with_connection(path: String, f: fn(Connection) -> a) -> a {
-  assert Ok(connection) = open(path)
+  let assert Ok(connection) = open(path)
   let value = f(connection)
-  assert Ok(_) = close(connection)
+  let assert Ok(_) = close(connection)
   value
 }
 
@@ -510,7 +510,7 @@ pub fn decode_bool(value: Dynamic) -> Result(Bool, List(dynamic.DecodeError)) {
 }
 
 fn decode_error(errors: List(dynamic.DecodeError)) -> Error {
-  assert [dynamic.DecodeError(expected, actual, path), ..] = errors
+  let assert [dynamic.DecodeError(expected, actual, path), ..] = errors
   let path = string.join(path, ".")
   let message =
     "Decoder failed, expected " <> expected <> ", got " <> actual <> " in " <> path
