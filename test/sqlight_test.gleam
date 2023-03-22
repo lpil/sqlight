@@ -32,21 +32,22 @@ pub fn errorcode_roundtrip_test() {
 }
 
 pub fn open_test() {
-  assert Ok(conn) = sqlight.open("")
-  assert Ok(Nil) = sqlight.close(conn)
+  let assert Ok(conn) = sqlight.open("")
+  let assert Ok(Nil) = sqlight.close(conn)
 
   // Closing multiple times is OK.
-  assert Ok(Nil) = sqlight.close(conn)
+  let assert Ok(Nil) = sqlight.close(conn)
 }
 
 if erlang {
   pub fn open_fail_test() {
-    assert Error(SqlightError(sqlight.Cantopen, "", -1)) = sqlight.open("tmp")
+    let assert Error(SqlightError(sqlight.Cantopen, "", -1)) =
+      sqlight.open("tmp")
   }
 }
 
 pub fn with_connection_test() {
-  assert Ok(123) = {
+  let assert Ok(123) = {
     use _conn <- sqlight.with_connection("")
     Ok(123)
   }
@@ -54,7 +55,7 @@ pub fn with_connection_test() {
 
 pub fn query_1_test() {
   use conn <- connect()
-  assert Ok([#(1, 2, 3), #(4, 5, 6)]) =
+  let assert Ok([#(1, 2, 3), #(4, 5, 6)]) =
     sqlight.query(
       "select 1, 2, 3 union all select 4, 5, 6",
       conn,
@@ -65,13 +66,13 @@ pub fn query_1_test() {
 
 pub fn query_2_test() {
   use conn <- connect()
-  assert Ok([1337]) =
+  let assert Ok([1337]) =
     sqlight.query("select 1337", conn, [], dynamic.element(0, dynamic.int))
 }
 
 pub fn bind_int_test() {
   use conn <- connect()
-  assert Ok([12_345]) =
+  let assert Ok([12_345]) =
     sqlight.query(
       "select ?",
       conn,
@@ -82,7 +83,7 @@ pub fn bind_int_test() {
 
 pub fn bind_float_test() {
   use conn <- connect()
-  assert Ok([12_345.6789]) =
+  let assert Ok([12_345.6789]) =
     sqlight.query(
       "select ?",
       conn,
@@ -93,7 +94,7 @@ pub fn bind_float_test() {
 
 pub fn bind_text_test() {
   use conn <- connect()
-  assert Ok(["hello"]) =
+  let assert Ok(["hello"]) =
     sqlight.query(
       "select ?",
       conn,
@@ -107,7 +108,7 @@ if erlang {
 
   pub fn bind_blob_test() {
     use conn <- connect()
-    assert Ok([<<123, 0>>]) =
+    let assert Ok([<<123, 0>>]) =
       sqlight.query(
         "select ?",
         conn,
@@ -119,7 +120,7 @@ if erlang {
 
 pub fn bind_null_test() {
   use conn <- connect()
-  assert Ok([option.None]) =
+  let assert Ok([option.None]) =
     sqlight.query(
       "select ?",
       conn,
@@ -130,7 +131,7 @@ pub fn bind_null_test() {
 
 pub fn bind_bool_test() {
   use conn <- connect()
-  assert Ok([True]) =
+  let assert Ok([True]) =
     sqlight.query(
       "select ?",
       conn,
@@ -141,9 +142,10 @@ pub fn bind_bool_test() {
 
 pub fn exec_test() {
   use conn <- connect()
-  assert Ok(Nil) = sqlight.exec("create table cats (name text)", conn)
-  assert Ok(Nil) = sqlight.exec("insert into cats (name) values ('Tim')", conn)
-  assert Ok(["Tim"]) =
+  let assert Ok(Nil) = sqlight.exec("create table cats (name text)", conn)
+  let assert Ok(Nil) =
+    sqlight.exec("insert into cats (name) values ('Tim')", conn)
+  let assert Ok(["Tim"]) =
     sqlight.query(
       "select name from cats",
       conn,
@@ -154,7 +156,7 @@ pub fn exec_test() {
 
 pub fn exec_fail_test() {
   use conn <- connect()
-  assert Error(SqlightError(sqlight.GenericError, "incomplete input", -1)) =
+  let assert Error(SqlightError(sqlight.GenericError, "incomplete input", -1)) =
     sqlight.exec("create table cats (name text", conn)
   Ok(Nil)
 }
@@ -167,31 +169,31 @@ pub fn readme_example_test() {
     "
   create table cats (name text, age int);
 
-  insert into cats (name, age) values 
+  insert into cats (name, age) values
   ('Nubi', 4),
   ('Biffy', 10),
   ('Ginny', 6);
   "
-  assert Ok(Nil) = sqlight.exec(sql, conn)
+  let assert Ok(Nil) = sqlight.exec(sql, conn)
 
   let sql =
     "
   select name, age from cats
   where age < ?
   "
-  assert Ok([#("Nubi", 4), #("Ginny", 6)]) =
+  let assert Ok([#("Nubi", 4), #("Ginny", 6)]) =
     sqlight.query(sql, on: conn, with: [sqlight.int(7)], expecting: cat_decoder)
 }
 
 pub fn error_syntax_error_test() {
   use conn <- sqlight.with_connection(":memory:")
-  assert Error(SqlightError(sqlight.GenericError, "incomplete input", -1)) =
+  let assert Error(SqlightError(sqlight.GenericError, "incomplete input", -1)) =
     sqlight.exec("create table cats (name text", conn)
 }
 
 pub fn error_info_foreign_key_test() {
   use conn <- sqlight.with_connection(":memory:")
-  assert Ok(_) =
+  let assert Ok(_) =
     sqlight.exec(
       "
   pragma foreign_keys = on;
@@ -209,17 +211,17 @@ pub fn error_info_foreign_key_test() {
   ",
       conn,
     )
-  assert Error(SqlightError(code, "FOREIGN KEY constraint failed", -1)) =
+  let assert Error(SqlightError(code, "FOREIGN KEY constraint failed", -1)) =
     sqlight.exec("insert into posts (user_id) values (1)", conn)
 
   // On Deno we do not have extended error codes so the information here is less precise.
-  assert True =
+  let assert True =
     code == sqlight.ConstraintForeignkey || code == sqlight.Constraint
 }
 
 pub fn error_info_null_constraint_test() {
   use conn <- sqlight.with_connection(":memory:")
-  assert Ok(_) =
+  let assert Ok(_) =
     sqlight.exec(
       "
   pragma foreign_keys = on;
@@ -231,16 +233,20 @@ pub fn error_info_null_constraint_test() {
   ",
       conn,
     )
-  assert Error(SqlightError(code, "NOT NULL constraint failed: users.name", -1)) =
-    sqlight.exec("insert into users default values;", conn)
+  let assert Error(SqlightError(
+    code,
+    "NOT NULL constraint failed: users.name",
+    -1,
+  )) = sqlight.exec("insert into users default values;", conn)
 
   // On Deno we do not have extended error codes so the information here is less precise.
-  assert True = sqlight.ConstraintNotnull == code || sqlight.Constraint == code
+  let assert True =
+    sqlight.ConstraintNotnull == code || sqlight.Constraint == code
 }
 
 pub fn decode_error_test() {
   use conn <- sqlight.with_connection(":memory:")
-  assert Error(SqlightError(
+  let assert Error(SqlightError(
     sqlight.GenericError,
     "Decoder failed, expected String, got Int in 0",
     -1,
@@ -250,7 +256,7 @@ pub fn decode_error_test() {
 pub fn query_error_test() {
   use conn <- sqlight.with_connection(":memory:")
 
-  assert Error(SqlightError(sqlight.GenericError, _, _)) =
+  let assert Error(SqlightError(sqlight.GenericError, _, _)) =
     sqlight.query(
       "this isn't a valid query",
       conn,
