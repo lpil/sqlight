@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.6.0 - 2023-03-23
+
+- Updated syntax for Gleam v0.27.0.
+
 ## v0.6.0 - 2023-01-15
 
 - Fixed a bug where `query` could crash when constructing an error when a query
