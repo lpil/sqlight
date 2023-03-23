@@ -35,8 +35,8 @@ pub fn open_test() {
   let assert Ok(conn) = sqlight.open("")
   let assert Ok(Nil) = sqlight.close(conn)
 
-  // Closing multiple times is OK.
-  let assert Ok(Nil) = sqlight.close(conn)
+  let assert // Closing multiple times is OK.
+  Ok(Nil) = sqlight.close(conn)
 }
 
 if erlang {
@@ -214,9 +214,8 @@ pub fn error_info_foreign_key_test() {
   let assert Error(SqlightError(code, "FOREIGN KEY constraint failed", -1)) =
     sqlight.exec("insert into posts (user_id) values (1)", conn)
 
-  // On Deno we do not have extended error codes so the information here is less precise.
-  let assert True =
-    code == sqlight.ConstraintForeignkey || code == sqlight.Constraint
+  let assert // On Deno we do not have extended error codes so the information here is less precise.
+  True = code == sqlight.ConstraintForeignkey || code == sqlight.Constraint
 }
 
 pub fn error_info_null_constraint_test() {
@@ -239,9 +238,8 @@ pub fn error_info_null_constraint_test() {
     -1,
   )) = sqlight.exec("insert into users default values;", conn)
 
-  // On Deno we do not have extended error codes so the information here is less precise.
-  let assert True =
-    sqlight.ConstraintNotnull == code || sqlight.Constraint == code
+  let assert // On Deno we do not have extended error codes so the information here is less precise.
+  True = sqlight.ConstraintNotnull == code || sqlight.Constraint == code
 }
 
 pub fn decode_error_test() {
