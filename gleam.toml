@@ -1,7 +1,9 @@
 name = "sqlight"
-version = "0.6.1"
+version = "0.7.0"
 licences = ["Apache-2.0"]
 description = "Use SQLite from Gleam!"
+
+gleam = ">= 0.30.0"
 
 repository = { type = "github", user = "lpil", repo = "sqlight" }
 links = [
