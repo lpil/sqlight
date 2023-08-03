@@ -3,11 +3,11 @@ import gleam/string
 import gleam/result
 import gleam/dynamic.{Decoder, Dynamic}
 
-pub external type Connection
+pub type Connection
 
 /// A value that can be sent to SQLite as one of the arguments to a
 /// parameterised SQL query.
-pub external type Value
+pub type Value
 
 pub type Stats {
   Stats(used: Int, highwater: Int)
@@ -298,21 +298,13 @@ pub fn error_code_from_int(code: Int) -> ErrorCode {
   }
 }
 
-if erlang {
-  external fn open_(String) -> Result(Connection, Error) =
-    "sqlight_ffi" "open"
+@external(erlang, "sqlight_ffi", "open")
+@external(javascript, "./sqlight_ffi.js", "open")
+fn open_(a: String) -> Result(Connection, Error)
 
-  external fn close_(Connection) -> Result(Nil, Error) =
-    "sqlight_ffi" "close"
-}
-
-if javascript {
-  external fn open_(String) -> Result(Connection, Error) =
-    "./sqlight_ffi.js" "open"
-
-  external fn close_(Connection) -> Result(Nil, Error) =
-    "./sqlight_ffi.js" "close"
-}
+@external(erlang, "sqlight_ffi", "close")
+@external(javascript, "./sqlight_ffi.js", "close")
+fn close_(a: Connection) -> Result(Nil, Error)
 
 /// Open a connection to a SQLite database.
 ///
@@ -396,43 +388,21 @@ pub fn query(
   Ok(rows)
 }
 
-if erlang {
-  external fn run_query(
-    String,
-    Connection,
-    List(Value),
-  ) -> Result(List(Dynamic), Error) =
-    "sqlight_ffi" "query"
-}
+@external(erlang, "sqlight_ffi", "query")
+@external(javascript, "./sqlight_ffi.js", "query")
+fn run_query(
+  a: String,
+  b: Connection,
+  c: List(Value),
+) -> Result(List(Dynamic), Error)
 
-if javascript {
-  external fn run_query(
-    String,
-    Connection,
-    List(Value),
-  ) -> Result(List(Dynamic), Error) =
-    "./sqlight_ffi.js" "query"
-}
+@external(erlang, "sqlight_ffi", "coerce_value")
+@external(javascript, "./sqlight_ffi.js", "coerce_value")
+fn coerce_value(a: a) -> Value
 
-if erlang {
-  external fn coerce_value(a) -> Value =
-    "sqlight_ffi" "coerce_value"
-}
-
-if javascript {
-  external fn coerce_value(a) -> Value =
-    "./sqlight_ffi.js" "coerce_value"
-}
-
-if erlang {
-  external fn exec_(String, Connection) -> Result(Nil, Error) =
-    "sqlight_ffi" "exec"
-}
-
-if javascript {
-  external fn exec_(String, Connection) -> Result(Nil, Error) =
-    "./sqlight_ffi.js" "exec"
-}
+@external(erlang, "sqlight_ffi", "exec")
+@external(javascript, "./sqlight_ffi.js", "exec")
+fn exec_(a: String, b: Connection) -> Result(Nil, Error)
 
 /// Convert a Gleam `Int` to an SQLite int, to be used an argument to a
 /// query.
@@ -462,15 +432,9 @@ pub fn blob(value: BitString) -> Value {
   coerce_blob(value)
 }
 
-if erlang {
-  external fn coerce_blob(BitString) -> Value =
-    "sqlight_ffi" "coerce_value"
-}
-
-if javascript {
-  external fn coerce_blob(BitString) -> Value =
-    "./sqlight_ffi.js" "coerce_blob"
-}
+@external(erlang, "sqlight_ffi", "coerce_value")
+@external(javascript, "./sqlight_ffi.js", "coerce_blob")
+fn coerce_blob(a: BitString) -> Value
 
 /// Convert a Gleam `Bool` to an SQLite int, to be used an argument to a
 /// query.
@@ -487,20 +451,14 @@ pub fn bool(value: Bool) -> Value {
   })
 }
 
-if erlang {
-  /// Construct an SQLite null, to be used an argument to a query.
-  ///
-  pub external fn null() -> Value =
-    "sqlight_ffi" "null"
-}
+/// Construct an SQLite null, to be used an argument to a query.
+///
+@external(erlang, "sqlight_ffi", "null")
+@external(javascript, "./sqlight_ffi.js", "null_")
+pub fn null() -> Value
 
-if javascript {
-  /// Construct an SQLite null, to be used an argument to a query.
-  ///
-  pub external fn null() -> Value =
-    "./sqlight_ffi.js" "null_"
-}
-
+/// Construct an SQLite null, to be used an argument to a query.
+///
 pub fn decode_bool(value: Dynamic) -> Result(Bool, List(dynamic.DecodeError)) {
   case dynamic.int(value) {
     Ok(0) -> Ok(False)

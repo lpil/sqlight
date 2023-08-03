@@ -39,11 +39,9 @@ pub fn open_test() {
   Ok(Nil) = sqlight.close(conn)
 }
 
-if erlang {
-  pub fn open_fail_test() {
-    let assert Error(SqlightError(sqlight.Cantopen, "", -1)) =
-      sqlight.open("tmp")
-  }
+@target(erlang)
+pub fn open_fail_test() {
+  let assert Error(SqlightError(sqlight.Cantopen, "", -1)) = sqlight.open("tmp")
 }
 
 pub fn with_connection_test() {
@@ -103,19 +101,18 @@ pub fn bind_text_test() {
     )
 }
 
-if erlang {
-  // TODO: enable this for JS once Gleam v0.26 is out
+// TODO: enable this for JS once Gleam v0.26 is out
 
-  pub fn bind_blob_test() {
-    use conn <- connect()
-    let assert Ok([<<123, 0>>]) =
-      sqlight.query(
-        "select ?",
-        conn,
-        [sqlight.blob(<<123, 0>>)],
-        dynamic.element(0, dynamic.bit_string),
-      )
-  }
+@target(erlang)
+pub fn bind_blob_test() {
+  use conn <- connect()
+  let assert Ok([<<123, 0>>]) =
+    sqlight.query(
+      "select ?",
+      conn,
+      [sqlight.blob(<<123, 0>>)],
+      dynamic.element(0, dynamic.bit_string),
+    )
 }
 
 pub fn bind_null_test() {
