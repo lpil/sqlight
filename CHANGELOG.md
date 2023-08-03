@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.7.0 - 2023-08-03
+
+- Updated syntax for Gleam v0.30.0.
+
 ## v0.6.0 - 2023-03-23
 
 - Updated syntax for Gleam v0.27.0.
