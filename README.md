@@ -10,7 +10,11 @@ Works on Erlang or JavaScript running on Deno.
 ```sh
 gleam add sqlight
 ```
+
 ```gleam
+import gleam/dynamic
+import sqlight
+
 pub fn main() {
   use conn <- sqlight.with_connection(":memory:")
   let cat_decoder = dynamic.tuple2(dynamic.string, dynamic.int)
@@ -23,13 +27,13 @@ pub fn main() {
   ('Biffy', 10),
   ('Ginny', 6);
   "
-  assert Ok(Nil) = sqlight.exec(sql, conn)
+  let assert Ok(Nil) = sqlight.exec(sql, conn)
 
   let sql = "
   select name, age from cats
   where age < ?
   "
-  assert Ok([#("Nubi", 4), #("Ginny", 6)]) =
+  let assert Ok([#("Nubi", 4), #("Ginny", 6)]) =
     sqlight.query(sql, on: conn, with: [sqlight.int(7)], expecting: cat_decoder)
 }
 ```
