@@ -1,6 +1,7 @@
 import gleam/list
 import gleam/string
 import gleam/result
+import gleam/option.{None, Option, Some}
 import gleam/dynamic.{Decoder, Dynamic}
 
 pub type Connection
@@ -403,6 +404,16 @@ fn coerce_value(a: a) -> Value
 @external(erlang, "sqlight_ffi", "exec")
 @external(javascript, "./sqlight_ffi.js", "exec")
 fn exec_(a: String, b: Connection) -> Result(Nil, Error)
+
+/// Convert a Gleam `Option` to an SQLite nullable value, to be used an argument
+/// to a query.
+///
+pub fn nullable(inner_type: fn(t) -> Value, value: Option(t)) -> Value {
+  case value {
+    Some(value) -> inner_type(value)
+    None -> null()
+  }
+}
 
 /// Convert a Gleam `Int` to an SQLite int, to be used an argument to a
 /// query.

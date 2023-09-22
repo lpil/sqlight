@@ -259,3 +259,23 @@ pub fn query_error_test() {
       dynamic.element(0, dynamic.int),
     )
 }
+
+pub fn bind_nullable_test() {
+  use conn <- connect()
+
+  let assert Ok([option.Some(12_345)]) =
+    sqlight.query(
+      "select ?",
+      conn,
+      [sqlight.nullable(sqlight.int, option.Some(12_345))],
+      dynamic.element(0, dynamic.optional(dynamic.int)),
+    )
+
+  let assert Ok([option.None]) =
+    sqlight.query(
+      "select ?",
+      conn,
+      [sqlight.nullable(sqlight.int, option.None)],
+      dynamic.element(0, dynamic.optional(dynamic.int)),
+    )
+}

@@ -3,11 +3,11 @@
 
 packages = [
   { name = "esqlite", version = "0.8.6", build_tools = ["rebar3"], requirements = [], otp_app = "esqlite", source = "hex", outer_checksum = "607E45F4DA42601D8F530979417F57A4CD629AB49085891849302057E68EA188" },
-  { name = "gleam_stdlib", version = "0.27.0", build_tools = ["gleam"], requirements = [], otp_app = "gleam_stdlib", source = "hex", outer_checksum = "9DBDD21B48C654182CDD8AA15ACF85E8E74A0438583C68BD7EF08BE89F999C6F" },
-  { name = "gleeunit", version = "0.10.1", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleeunit", source = "hex", outer_checksum = "ECEA2DE4BE6528D36AFE74F42A21CDF99966EC36D7F25DEB34D47DD0F7977BAF" },
+  { name = "gleam_stdlib", version = "0.30.2", build_tools = ["gleam"], requirements = [], otp_app = "gleam_stdlib", source = "hex", outer_checksum = "8D8BF3790AA31176B1E1C0B517DD74C86DA8235CF3389EA02043EE4FD82AE3DC" },
+  { name = "gleeunit", version = "0.11.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleeunit", source = "hex", outer_checksum = "1397E5C4AC4108769EE979939AC39BF7870659C5AFB714630DEEEE16B8272AD5" },
 ]
 
 [requirements]
-esqlite = "~> 0.8"
-gleam_stdlib = "~> 0.25"
-gleeunit = "~> 0.8"
+esqlite = { version = "~> 0.8" }
+gleam_stdlib = { version = "~> 0.25" }
+gleeunit = { version = "~> 0.8" }
