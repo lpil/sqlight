@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.8.0 - 2023-09-22
+
+- The `nullable` function has been added.
+
 ## v0.7.0 - 2023-08-03
 
 - Updated syntax for Gleam v0.30.0.
