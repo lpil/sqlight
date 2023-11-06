@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.9.0 - 2023-11-06
+
+- Updated for v0.32.0.
+
 ## v0.8.0 - 2023-09-22
 
 - The `nullable` function has been added.
