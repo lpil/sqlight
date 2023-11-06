@@ -111,7 +111,7 @@ pub fn bind_blob_test() {
       "select ?",
       conn,
       [sqlight.blob(<<123, 0>>)],
-      dynamic.element(0, dynamic.bit_string),
+      dynamic.element(0, dynamic.bit_array),
     )
 }
 

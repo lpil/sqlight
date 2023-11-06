@@ -3,7 +3,7 @@ version = "0.8.0"
 licences = ["Apache-2.0"]
 description = "Use SQLite from Gleam!"
 
-gleam = ">= 0.30.0"
+gleam = ">= 0.32.0"
 
 repository = { type = "github", user = "lpil", repo = "sqlight" }
 links = [
@@ -30,4 +30,4 @@ gleam_stdlib = "~> 0.25"
 esqlite = "~> 0.8"
 
 [dev-dependencies]
-gleeunit = "~> 0.8"
+gleeunit = "~> 1.0"

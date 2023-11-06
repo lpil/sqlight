@@ -1,8 +1,8 @@
 import gleam/list
 import gleam/string
 import gleam/result
-import gleam/option.{None, Option, Some}
-import gleam/dynamic.{Decoder, Dynamic}
+import gleam/option.{type Option, None, Some}
+import gleam/dynamic.{type Decoder, type Dynamic}
 
 pub type Connection
 
@@ -439,13 +439,13 @@ pub fn text(value: String) -> Value {
 /// Convert a Gleam `BitString` to an SQLite blob, to be used an argument to a
 /// query.
 ///
-pub fn blob(value: BitString) -> Value {
+pub fn blob(value: BitArray) -> Value {
   coerce_blob(value)
 }
 
 @external(erlang, "sqlight_ffi", "coerce_value")
 @external(javascript, "./sqlight_ffi.js", "coerce_blob")
-fn coerce_blob(a: BitString) -> Value
+fn coerce_blob(a: BitArray) -> Value
 
 /// Convert a Gleam `Bool` to an SQLite int, to be used an argument to a
 /// query.
