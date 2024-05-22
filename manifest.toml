@@ -2,12 +2,12 @@
 # You typically do not need to edit this file
 
 packages = [
-  { name = "esqlite", version = "0.8.6", build_tools = ["rebar3"], requirements = [], otp_app = "esqlite", source = "hex", outer_checksum = "607E45F4DA42601D8F530979417F57A4CD629AB49085891849302057E68EA188" },
-  { name = "gleam_stdlib", version = "0.32.0", build_tools = ["gleam"], requirements = [], otp_app = "gleam_stdlib", source = "hex", outer_checksum = "07D64C26D014CF570F8ACADCE602761EA2E74C842D26F2FD49B0D61973D9966F" },
-  { name = "gleeunit", version = "1.0.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleeunit", source = "hex", outer_checksum = "D3682ED8C5F9CAE1C928F2506DE91625588CC752495988CBE0F5653A42A6F334" },
+  { name = "esqlite", version = "0.8.7", build_tools = ["rebar3"], requirements = [], otp_app = "esqlite", source = "hex", outer_checksum = "AF89C66027704B681657FDCCFFCEAA238D0DD702D5F687CDA3037F1D599A7551" },
+  { name = "gleam_stdlib", version = "0.37.0", build_tools = ["gleam"], requirements = [], otp_app = "gleam_stdlib", source = "hex", outer_checksum = "5398BD6C2ABA17338F676F42F404B9B7BABE1C8DC7380031ACB05BBE1BCF3742" },
+  { name = "gleeunit", version = "1.1.2", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleeunit", source = "hex", outer_checksum = "72CDC3D3F719478F26C4E2C5FED3E657AC81EC14A47D2D2DEBB8693CA3220C3B" },
 ]
 
 [requirements]
-esqlite = { version = "~> 0.8" }
-gleam_stdlib = { version = "~> 0.25" }
-gleeunit = { version = "~> 1.0" }
+esqlite = { version = ">= 0.8.7 and < 2.0.0" }
+gleam_stdlib = { version = ">= 0.37.0 and < 2.0.0" }
+gleeunit = { version = ">= 1.1.2 and < 2.0.0" }

@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.10.0 - 2024-05-22
+
+- Updated esqlite dependency to work with erlang/otp 27.0.
+- Require gleam >= 1.0.0.
+- Updated for gleam 1.1.0.
+
 ## v0.9.0 - 2023-11-06
 
 - Updated for v0.32.0.
@@ -23,7 +29,7 @@
 
 ## v0.5.0 - 2023-01-08
 
-- This library now works on JavaScript with the Deno runtime. 
+- This library now works on JavaScript with the Deno runtime.
 - The `status` function has been removed.
 
 ## v0.4.0 - 2023-01-02

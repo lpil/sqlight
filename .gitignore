@@ -2,3 +2,8 @@
 *.ez
 build
 erl_crash.dump
+
+/tmp/
+!/tmp/.keep
+
+.tool-versions
