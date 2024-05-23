@@ -1,8 +1,8 @@
-import gleam/list
-import gleam/string
-import gleam/result
-import gleam/option.{type Option, None, Some}
 import gleam/dynamic.{type Decoder, type Dynamic}
+import gleam/list
+import gleam/option.{type Option, None, Some}
+import gleam/result
+import gleam/string
 
 pub type Connection
 
@@ -482,6 +482,11 @@ fn decode_error(errors: List(dynamic.DecodeError)) -> Error {
   let assert [dynamic.DecodeError(expected, actual, path), ..] = errors
   let path = string.join(path, ".")
   let message =
-    "Decoder failed, expected " <> expected <> ", got " <> actual <> " in " <> path
+    "Decoder failed, expected "
+    <> expected
+    <> ", got "
+    <> actual
+    <> " in "
+    <> path
   SqlightError(code: GenericError, message: message, offset: -1)
 }

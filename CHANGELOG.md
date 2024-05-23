@@ -2,9 +2,9 @@
 
 ## v0.10.0 - 2024-05-22
 
-- Updated esqlite dependency to work with erlang/otp 27.0.
-- Require gleam >= 1.0.0.
-- Updated for gleam 1.1.0.
+- Raised esqlite dependency minimum version
+  to work with Erlang/OTP 27.0.
+- Require Gleam >= 1.0.0.
 
 ## v0.9.0 - 2023-11-06
 

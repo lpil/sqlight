@@ -7,26 +7,20 @@ gleam = ">= 1.0.0"
 
 repository = { type = "github", user = "lpil", repo = "sqlight" }
 links = [
-  { title = "Website", href = "https://gleam.run" },
-  { title = "Sponsor", href = "https://github.com/sponsors/lpil" },
+    { title = "Website", href = "https://gleam.run" },
+    { title = "Sponsor", href = "https://github.com/sponsors/lpil" },
 ]
 
 [javascript]
 runtime = "deno"
 
 [javascript.deno]
-allow_read = [
-  "gleam.toml",
-  "test",
-  "build",
-  "tmp",
-]
-allow_write = [
-  "tmp",
-]
+allow_read = ["gleam.toml", "test", "build", "tmp"]
+allow_write = ["tmp"]
 
 [dependencies]
 gleam_stdlib = ">= 0.37.0 and < 2.0.0"
+pc = ">= 1.15.0 and < 2.0.0"
 esqlite = ">= 0.8.8 and < 2.0.0"
 
 [dev-dependencies]

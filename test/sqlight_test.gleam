@@ -1,9 +1,9 @@
-import sqlight.{SqlightError}
+import gleam/dynamic
+import gleam/list
+import gleam/option
 import gleeunit
 import gleeunit/should
-import gleam/dynamic
-import gleam/option
-import gleam/list
+import sqlight.{SqlightError}
 
 pub fn main() {
   gleeunit.main()
