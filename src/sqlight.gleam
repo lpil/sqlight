@@ -468,7 +468,9 @@ pub fn bool(value: Bool) -> Value {
 @external(javascript, "./sqlight_ffi.js", "null_")
 pub fn null() -> Value
 
-/// Construct an SQLite null, to be used an argument to a query.
+/// Decode an SQLite boolean value.
+///
+/// Decodes 0 as `False` and any other integer as `True`.
 ///
 pub fn decode_bool(value: Dynamic) -> Result(Bool, List(dynamic.DecodeError)) {
   case dynamic.int(value) {
