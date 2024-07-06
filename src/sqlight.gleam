@@ -360,7 +360,7 @@ pub fn close(connection: Connection) -> Result(Nil, Error) {
 /// # Examples
 ///
 /// ```gleam
-/// use conn = with_connection("file:mydb?mode=memory")
+/// use conn <- with_connection("file:mydb?mode=memory")
 /// // Use the connection here...
 /// ```
 ///
