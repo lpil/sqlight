@@ -1,7 +1,7 @@
 -module(sqlight_ffi).
 
 -export([
-    status/0, query/3, exec/2, coerce_value/1, null/0, open/1, close/1
+    status/0, query/3, exec/2, coerce_value/1, coerce_blob/1, null/0, open/1, close/1
 ]).
 
 open(Name) ->
@@ -54,6 +54,7 @@ status() ->
     }.
 
 coerce_value(X) -> X.
+coerce_blob(Bin) -> {blob, Bin}.
 null() -> undefined.
 
 to_error(Connection = {esqlite3, _}, Code) when is_integer(Code) ->
