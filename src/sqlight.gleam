@@ -443,7 +443,7 @@ pub fn blob(value: BitArray) -> Value {
   coerce_blob(value)
 }
 
-@external(erlang, "sqlight_ffi", "coerce_value")
+@external(erlang, "sqlight_ffi", "coerce_blob")
 @external(javascript, "./sqlight_ffi.js", "coerce_blob")
 fn coerce_blob(a: BitArray) -> Value
 

@@ -106,12 +106,12 @@ pub fn bind_text_test() {
 @target(erlang)
 pub fn bind_blob_test() {
   use conn <- connect()
-  let assert Ok([<<123, 0>>]) =
+  let assert Ok([#(<<123, 0>>, "blob")]) =
     sqlight.query(
-      "select ?",
+      "select ?1, typeof(?1)",
       conn,
       [sqlight.blob(<<123, 0>>)],
-      dynamic.element(0, dynamic.bit_array),
+      dynamic.tuple2(dynamic.bit_array, dynamic.string),
     )
 }
 
