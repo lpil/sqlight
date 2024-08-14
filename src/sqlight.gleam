@@ -439,13 +439,9 @@ pub fn text(value: String) -> Value {
 /// Convert a Gleam `BitString` to an SQLite blob, to be used an argument to a
 /// query.
 ///
-pub fn blob(value: BitArray) -> Value {
-  coerce_blob(value)
-}
-
 @external(erlang, "sqlight_ffi", "coerce_blob")
 @external(javascript, "./sqlight_ffi.js", "coerce_blob")
-fn coerce_blob(a: BitArray) -> Value
+pub fn blob(value: BitArray) -> Value
 
 /// Convert a Gleam `Bool` to an SQLite int, to be used an argument to a
 /// query.
