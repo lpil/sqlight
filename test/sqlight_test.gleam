@@ -1,9 +1,9 @@
-import sqlight.{SqlightError}
+import gleam/dynamic
+import gleam/list
+import gleam/option
 import gleeunit
 import gleeunit/should
-import gleam/dynamic
-import gleam/option
-import gleam/list
+import sqlight.{SqlightError}
 
 pub fn main() {
   gleeunit.main()
@@ -39,7 +39,6 @@ pub fn open_test() {
   Ok(Nil) = sqlight.close(conn)
 }
 
-@target(erlang)
 pub fn open_fail_test() {
   let assert Error(SqlightError(sqlight.Cantopen, "", -1)) = sqlight.open("tmp")
 }
@@ -101,9 +100,6 @@ pub fn bind_text_test() {
     )
 }
 
-// TODO: enable this for JS once Gleam v0.26 is out
-
-@target(erlang)
 pub fn bind_blob_test() {
   use conn <- connect()
   let assert Ok([#(<<123, 0>>, "blob")]) =

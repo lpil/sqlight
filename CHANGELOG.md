@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.9.1 - 2024-08-19
+
+- Fixed a bug where bit arrays could bind to the incorrect SQLite type.
+
 ## v0.9.0 - 2023-11-06
 
 - Updated for v0.32.0.
