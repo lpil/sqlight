@@ -39,6 +39,7 @@ pub fn open_test() {
   Ok(Nil) = sqlight.close(conn)
 }
 
+@target(erlang)
 pub fn open_fail_test() {
   let assert Error(SqlightError(sqlight.Cantopen, "", -1)) = sqlight.open("tmp")
 }
