@@ -6,6 +6,16 @@ import gleam/string
 
 pub type Connection
 
+type PreparedStatement
+
+pub opaque type Statement(t) {
+  Statement(
+    connection: Connection,
+    prepared_statement: PreparedStatement,
+    decoder: Decoder(t),
+  )
+}
+
 /// A value that can be sent to SQLite as one of the arguments to a
 /// parameterised SQL query.
 pub type Value
@@ -389,10 +399,49 @@ pub fn query(
   Ok(rows)
 }
 
+pub fn prepare(
+  sql: String,
+  on connection: Connection,
+  expecting decoder: Decoder(t),
+) -> Result(Statement(t), Error) {
+  do_prepare(sql, connection)
+  |> result.then(fn(prepared_statement) {
+    Ok(Statement(connection, prepared_statement, decoder))
+  })
+}
+
+pub fn query_prepared(
+  statement: Statement(t),
+  with arguments: List(Value),
+) -> Result(List(t), Error) {
+  use rows <- result.then(run_prepared_query(
+    statement.prepared_statement,
+    statement.connection,
+    arguments,
+  ))
+  use rows <- result.then(
+    list.try_map(over: rows, with: statement.decoder)
+    |> result.map_error(decode_error),
+  )
+  Ok(rows)
+}
+
 @external(erlang, "sqlight_ffi", "query")
 @external(javascript, "./sqlight_ffi.js", "query")
 fn run_query(
   a: String,
+  b: Connection,
+  c: List(Value),
+) -> Result(List(Dynamic), Error)
+
+@external(erlang, "sqlight_ffi", "prepare")
+@external(javascript, "./sqlight_ffi.js", "prepare")
+fn do_prepare(a: String, b: Connection) -> Result(PreparedStatement, Error)
+
+@external(erlang, "sqlight_ffi", "query_prepared")
+@external(javascript, "./sqlight_ffi.js", "query_prepared")
+fn run_prepared_query(
+  a: PreparedStatement,
   b: Connection,
   c: List(Value),
 ) -> Result(List(Dynamic), Error)

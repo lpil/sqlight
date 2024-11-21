@@ -1,13 +1,22 @@
 -module(sqlight_ffi).
 
 -export([
-    status/0, query/3, exec/2, coerce_value/1, coerce_blob/1, null/0, open/1, close/1
+    status/0,
+    query/3,
+    prepare/2,
+    query_prepared/3,
+    exec/2,
+    coerce_value/1,
+    coerce_blob/1,
+    null/0,
+    open/1,
+    close/1
 ]).
 
 open(Name) ->
     case esqlite3:open(unicode:characters_to_list(Name)) of
         {ok, Connection} -> {ok, Connection};
-        {error, Code} -> 
+        {error, Code} ->
             Code1 = sqlight:error_code_from_int(Code),
             {error, {sqlight_error, Code1, <<>>, -1}}
     end.
@@ -20,6 +29,25 @@ close(Connection) ->
 
 query(Sql, Connection, Arguments) when is_binary(Sql) ->
     case esqlite3:q(Connection, Sql, Arguments) of
+        {error, Code} -> to_error(Connection, Code);
+        Rows -> {ok, lists:map(fun erlang:list_to_tuple/1, Rows)}
+    end.
+
+prepare(Sql, Connection) when is_binary(Sql) ->
+    case esqlite3:prepare(Connection, Sql) of
+        {error, Code} -> to_error(Connection, Code);
+        {ok, Statement} -> {ok, Statement}
+    end.
+
+query_prepared(Statement, Connection, Arguments) ->
+    case
+        (case esqlite3:bind(Statement, Arguments) of
+            ok ->
+                esqlite3:fetchall(Statement);
+            {error, _} = Error ->
+                Error
+        end)
+    of
         {error, Code} -> to_error(Connection, Code);
         Rows -> {ok, lists:map(fun erlang:list_to_tuple/1, Rows)}
     end.

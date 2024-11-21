@@ -2,12 +2,23 @@ import { List, Ok, Error as GlError } from "./gleam.mjs";
 import { SqlightError, error_code_from_int } from "./sqlight.mjs";
 import { DB } from "https://deno.land/x/sqlite@v3.7.0/mod.ts";
 
+function wrapDB(db) {
+  return {
+    db: db,
+    statements: [],
+  };
+}
+
 export function open(path) {
-  return new Ok(new DB(path));
+  return new Ok(wrapDB(new DB(path)));
 }
 
 export function close(connection) {
-  connection.close();
+  for(let statement of connection.statements) {
+    statement.finalize();
+  }
+  connection.statements = [];
+  connection.db.close();
   return new Ok(undefined);
 }
 
@@ -26,7 +37,7 @@ export function status(connection) {
 
 export function exec(sql, connection) {
   try {
-    connection.execute(sql);
+    connection.db.execute(sql);
     return new Ok(undefined);
   } catch (error) {
     return convert_error(error);
@@ -36,7 +47,28 @@ export function exec(sql, connection) {
 export function query(sql, connection, parameters) {
   let rows;
   try {
-    rows = connection.query(sql, parameters.toArray());
+    rows = connection.db.query(sql, parameters.toArray());
+  } catch (error) {
+    return convert_error(error);
+  }
+  return new Ok(List.fromArray(rows));
+}
+
+export function prepare(sql, connection) {
+  let statement;
+  try {
+    statement = connection.db.prepareQuery(sql);
+    connection.statements.push(statement);
+  } catch (error) {
+    return convert_error(error);
+  }
+  return new Ok(statement);
+}
+
+export function query_prepared(statement, _connection, parameters) {
+  let rows;
+  try {
+    rows = statement.all(parameters.toArray());
   } catch (error) {
     return convert_error(error);
   }

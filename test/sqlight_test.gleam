@@ -51,10 +51,38 @@ pub fn with_connection_test() {
   }
 }
 
+fn prepare_and_query(
+  sql: String,
+  on connection: sqlight.Connection,
+  with arguments: List(sqlight.Value),
+  expecting decoder: dynamic.Decoder(t),
+) -> Result(List(t), sqlight.Error) {
+  case sqlight.prepare(sql, connection, decoder) {
+    Ok(prepared) -> {
+      let result = sqlight.query_prepared(prepared, arguments)
+
+      sqlight.query(sql, connection, arguments, decoder)
+      |> should.equal(result)
+
+      sqlight.query_prepared(prepared, arguments)
+      |> should.equal(result)
+
+      result
+    }
+    Error(error) -> {
+      let result = Error(error)
+      sqlight.query(sql, connection, arguments, decoder)
+      |> should.equal(result)
+
+      result
+    }
+  }
+}
+
 pub fn query_1_test() {
   use conn <- connect()
   let assert Ok([#(1, 2, 3), #(4, 5, 6)]) =
-    sqlight.query(
+    prepare_and_query(
       "select 1, 2, 3 union all select 4, 5, 6",
       conn,
       [],
@@ -65,13 +93,13 @@ pub fn query_1_test() {
 pub fn query_2_test() {
   use conn <- connect()
   let assert Ok([1337]) =
-    sqlight.query("select 1337", conn, [], dynamic.element(0, dynamic.int))
+    prepare_and_query("select 1337", conn, [], dynamic.element(0, dynamic.int))
 }
 
 pub fn bind_int_test() {
   use conn <- connect()
   let assert Ok([12_345]) =
-    sqlight.query(
+    prepare_and_query(
       "select ?",
       conn,
       [sqlight.int(12_345)],
@@ -82,7 +110,7 @@ pub fn bind_int_test() {
 pub fn bind_float_test() {
   use conn <- connect()
   let assert Ok([12_345.6789]) =
-    sqlight.query(
+    prepare_and_query(
       "select ?",
       conn,
       [sqlight.float(12_345.6789)],
@@ -93,7 +121,7 @@ pub fn bind_float_test() {
 pub fn bind_text_test() {
   use conn <- connect()
   let assert Ok(["hello"]) =
-    sqlight.query(
+    prepare_and_query(
       "select ?",
       conn,
       [sqlight.text("hello")],
@@ -104,7 +132,7 @@ pub fn bind_text_test() {
 pub fn bind_blob_test() {
   use conn <- connect()
   let assert Ok([#(<<123, 0>>, "blob")]) =
-    sqlight.query(
+    prepare_and_query(
       "select ?1, typeof(?1)",
       conn,
       [sqlight.blob(<<123, 0>>)],
@@ -115,7 +143,7 @@ pub fn bind_blob_test() {
 pub fn bind_null_test() {
   use conn <- connect()
   let assert Ok([option.None]) =
-    sqlight.query(
+    prepare_and_query(
       "select ?",
       conn,
       [sqlight.null()],
@@ -126,7 +154,7 @@ pub fn bind_null_test() {
 pub fn bind_bool_test() {
   use conn <- connect()
   let assert Ok([True]) =
-    sqlight.query(
+    prepare_and_query(
       "select ?",
       conn,
       [sqlight.bool(True)],
@@ -140,7 +168,7 @@ pub fn exec_test() {
   let assert Ok(Nil) =
     sqlight.exec("insert into cats (name) values ('Tim')", conn)
   let assert Ok(["Tim"]) =
-    sqlight.query(
+    prepare_and_query(
       "select name from cats",
       conn,
       [],
@@ -176,7 +204,12 @@ pub fn readme_example_test() {
   where age < ?
   "
   let assert Ok([#("Nubi", 4), #("Ginny", 6)]) =
-    sqlight.query(sql, on: conn, with: [sqlight.int(7)], expecting: cat_decoder)
+    prepare_and_query(
+      sql,
+      on: conn,
+      with: [sqlight.int(7)],
+      expecting: cat_decoder,
+    )
 }
 
 pub fn error_syntax_error_test() {
@@ -242,14 +275,15 @@ pub fn decode_error_test() {
     sqlight.GenericError,
     "Decoder failed, expected String, got Int in 0",
     -1,
-  )) = sqlight.query("select 1", conn, [], dynamic.element(0, dynamic.string))
+  )) =
+    prepare_and_query("select 1", conn, [], dynamic.element(0, dynamic.string))
 }
 
 pub fn query_error_test() {
   use conn <- sqlight.with_connection(":memory:")
 
   let assert Error(SqlightError(sqlight.GenericError, _, _)) =
-    sqlight.query(
+    prepare_and_query(
       "this isn't a valid query",
       conn,
       [],
@@ -261,7 +295,7 @@ pub fn bind_nullable_test() {
   use conn <- connect()
 
   let assert Ok([option.Some(12_345)]) =
-    sqlight.query(
+    prepare_and_query(
       "select ?",
       conn,
       [sqlight.nullable(sqlight.int, option.Some(12_345))],
@@ -269,7 +303,7 @@ pub fn bind_nullable_test() {
     )
 
   let assert Ok([option.None]) =
-    sqlight.query(
+    prepare_and_query(
       "select ?",
       conn,
       [sqlight.nullable(sqlight.int, option.None)],
