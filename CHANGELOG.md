@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.10.0 - 2024-11-21
+## v0.10.0 - 2024-11-22
 
 - Added support for prepared statements. They can be created with `prepare` and 
   queried with `query_prepared`.
