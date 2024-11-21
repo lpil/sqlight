@@ -6,12 +6,12 @@ import gleam/string
 
 pub type Connection
 
-type PreparedStatement
+type Statement
 
-pub opaque type Statement(t) {
-  Statement(
+pub opaque type PreparedStatement(t) {
+  PreparedStatement(
     connection: Connection,
-    prepared_statement: PreparedStatement,
+    prepared_statement: Statement,
     decoder: Decoder(t),
   )
 }
@@ -403,24 +403,24 @@ pub fn prepare(
   sql: String,
   on connection: Connection,
   expecting decoder: Decoder(t),
-) -> Result(Statement(t), Error) {
+) -> Result(PreparedStatement(t), Error) {
   do_prepare(sql, connection)
   |> result.then(fn(prepared_statement) {
-    Ok(Statement(connection, prepared_statement, decoder))
+    Ok(PreparedStatement(connection, prepared_statement, decoder))
   })
 }
 
 pub fn query_prepared(
-  statement: Statement(t),
+  prepared_statement: PreparedStatement(t),
   with arguments: List(Value),
 ) -> Result(List(t), Error) {
   use rows <- result.then(run_prepared_query(
-    statement.prepared_statement,
-    statement.connection,
+    prepared_statement.prepared_statement,
+    prepared_statement.connection,
     arguments,
   ))
   use rows <- result.then(
-    list.try_map(over: rows, with: statement.decoder)
+    list.try_map(over: rows, with: prepared_statement.decoder)
     |> result.map_error(decode_error),
   )
   Ok(rows)
@@ -436,12 +436,12 @@ fn run_query(
 
 @external(erlang, "sqlight_ffi", "prepare")
 @external(javascript, "./sqlight_ffi.js", "prepare")
-fn do_prepare(a: String, b: Connection) -> Result(PreparedStatement, Error)
+fn do_prepare(a: String, b: Connection) -> Result(Statement, Error)
 
 @external(erlang, "sqlight_ffi", "query_prepared")
 @external(javascript, "./sqlight_ffi.js", "query_prepared")
 fn run_prepared_query(
-  a: PreparedStatement,
+  a: Statement,
   b: Connection,
   c: List(Value),
 ) -> Result(List(Dynamic), Error)

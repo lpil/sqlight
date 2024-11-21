@@ -51,7 +51,7 @@ pub fn with_connection_test() {
   }
 }
 
-fn prepare_and_query(
+fn prepare_and_query_multiple_times(
   sql: String,
   on connection: sqlight.Connection,
   with arguments: List(sqlight.Value),
@@ -82,7 +82,7 @@ fn prepare_and_query(
 pub fn query_1_test() {
   use conn <- connect()
   let assert Ok([#(1, 2, 3), #(4, 5, 6)]) =
-    prepare_and_query(
+    prepare_and_query_multiple_times(
       "select 1, 2, 3 union all select 4, 5, 6",
       conn,
       [],
@@ -93,13 +93,18 @@ pub fn query_1_test() {
 pub fn query_2_test() {
   use conn <- connect()
   let assert Ok([1337]) =
-    prepare_and_query("select 1337", conn, [], dynamic.element(0, dynamic.int))
+    prepare_and_query_multiple_times(
+      "select 1337",
+      conn,
+      [],
+      dynamic.element(0, dynamic.int),
+    )
 }
 
 pub fn bind_int_test() {
   use conn <- connect()
   let assert Ok([12_345]) =
-    prepare_and_query(
+    prepare_and_query_multiple_times(
       "select ?",
       conn,
       [sqlight.int(12_345)],
@@ -110,7 +115,7 @@ pub fn bind_int_test() {
 pub fn bind_float_test() {
   use conn <- connect()
   let assert Ok([12_345.6789]) =
-    prepare_and_query(
+    prepare_and_query_multiple_times(
       "select ?",
       conn,
       [sqlight.float(12_345.6789)],
@@ -121,7 +126,7 @@ pub fn bind_float_test() {
 pub fn bind_text_test() {
   use conn <- connect()
   let assert Ok(["hello"]) =
-    prepare_and_query(
+    prepare_and_query_multiple_times(
       "select ?",
       conn,
       [sqlight.text("hello")],
@@ -132,7 +137,7 @@ pub fn bind_text_test() {
 pub fn bind_blob_test() {
   use conn <- connect()
   let assert Ok([#(<<123, 0>>, "blob")]) =
-    prepare_and_query(
+    prepare_and_query_multiple_times(
       "select ?1, typeof(?1)",
       conn,
       [sqlight.blob(<<123, 0>>)],
@@ -143,7 +148,7 @@ pub fn bind_blob_test() {
 pub fn bind_null_test() {
   use conn <- connect()
   let assert Ok([option.None]) =
-    prepare_and_query(
+    prepare_and_query_multiple_times(
       "select ?",
       conn,
       [sqlight.null()],
@@ -154,7 +159,7 @@ pub fn bind_null_test() {
 pub fn bind_bool_test() {
   use conn <- connect()
   let assert Ok([True]) =
-    prepare_and_query(
+    prepare_and_query_multiple_times(
       "select ?",
       conn,
       [sqlight.bool(True)],
@@ -168,7 +173,7 @@ pub fn exec_test() {
   let assert Ok(Nil) =
     sqlight.exec("insert into cats (name) values ('Tim')", conn)
   let assert Ok(["Tim"]) =
-    prepare_and_query(
+    prepare_and_query_multiple_times(
       "select name from cats",
       conn,
       [],
@@ -204,7 +209,7 @@ pub fn readme_example_test() {
   where age < ?
   "
   let assert Ok([#("Nubi", 4), #("Ginny", 6)]) =
-    prepare_and_query(
+    prepare_and_query_multiple_times(
       sql,
       on: conn,
       with: [sqlight.int(7)],
@@ -276,14 +281,19 @@ pub fn decode_error_test() {
     "Decoder failed, expected String, got Int in 0",
     -1,
   )) =
-    prepare_and_query("select 1", conn, [], dynamic.element(0, dynamic.string))
+    prepare_and_query_multiple_times(
+      "select 1",
+      conn,
+      [],
+      dynamic.element(0, dynamic.string),
+    )
 }
 
 pub fn query_error_test() {
   use conn <- sqlight.with_connection(":memory:")
 
   let assert Error(SqlightError(sqlight.GenericError, _, _)) =
-    prepare_and_query(
+    prepare_and_query_multiple_times(
       "this isn't a valid query",
       conn,
       [],
@@ -295,7 +305,7 @@ pub fn bind_nullable_test() {
   use conn <- connect()
 
   let assert Ok([option.Some(12_345)]) =
-    prepare_and_query(
+    prepare_and_query_multiple_times(
       "select ?",
       conn,
       [sqlight.nullable(sqlight.int, option.Some(12_345))],
@@ -303,7 +313,7 @@ pub fn bind_nullable_test() {
     )
 
   let assert Ok([option.None]) =
-    prepare_and_query(
+    prepare_and_query_multiple_times(
       "select ?",
       conn,
       [sqlight.nullable(sqlight.int, option.None)],

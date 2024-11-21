@@ -1,16 +1,7 @@
 -module(sqlight_ffi).
 
 -export([
-    status/0,
-    query/3,
-    prepare/2,
-    query_prepared/3,
-    exec/2,
-    coerce_value/1,
-    coerce_blob/1,
-    null/0,
-    open/1,
-    close/1
+    status/0, query/3, prepare/2, query_prepared/3, exec/2, coerce_value/1, coerce_blob/1, null/0, open/1, close/1
 ]).
 
 open(Name) ->
