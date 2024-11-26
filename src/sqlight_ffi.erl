@@ -25,7 +25,7 @@ query(Sql, Connection, Arguments) when is_binary(Sql) ->
     end.
 
 prepare(Sql, Connection) when is_binary(Sql) ->
-    case esqlite3:prepare(Connection, Sql) of
+    case esqlite3:prepare(Connection, Sql, [{persistent, true}]) of
         {error, Code} -> to_error(Connection, Code);
         {ok, Statement} -> {ok, Statement}
     end.
@@ -39,8 +39,12 @@ query_prepared(Statement, Connection, Arguments) ->
                 Error
         end)
     of
-        {error, Code} -> to_error(Connection, Code);
-        Rows -> {ok, lists:map(fun erlang:list_to_tuple/1, Rows)}
+        {error, Code} ->
+            esqlite3:reset(Statement),
+            to_error(Connection, Code);
+        Rows ->
+            esqlite3:reset(Statement),
+            {ok, lists:map(fun erlang:list_to_tuple/1, Rows)}
     end.
 
 exec(Sql, Connection) ->
