@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.10.0 - 2024-11-22
+
+- Added support for prepared statements. They can be created with `prepare` and 
+  queried with `query_prepared`.
+
 ## v0.9.1 - 2024-08-19
 
 - Fixed a bug where bit arrays could bind to the incorrect SQLite type.

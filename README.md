@@ -35,6 +35,11 @@ pub fn main() {
   "
   let assert Ok([#("Nubi", 4), #("Ginny", 6)]) =
     sqlight.query(sql, on: conn, with: [sqlight.int(7)], expecting: cat_decoder)
+
+  let assert Ok(prepared) =
+    sqlight.prepare(sql, on: conn, expecting: cat_decoder)
+  let assert Ok([#("Nubi", 4), #("Ginny", 6)]) =
+    sqlight.query_prepared(prepared, with: [sqlight.int(7)])
 }
 ```
 

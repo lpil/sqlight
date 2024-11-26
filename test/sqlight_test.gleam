@@ -1,6 +1,7 @@
 import gleam/dynamic
 import gleam/list
 import gleam/option
+import gleam/result
 import gleeunit
 import gleeunit/should
 import sqlight.{SqlightError}
@@ -51,10 +52,38 @@ pub fn with_connection_test() {
   }
 }
 
+fn prepare_and_query_multiple_times(
+  sql: String,
+  on connection: sqlight.Connection,
+  with arguments: List(sqlight.Value),
+  expecting decoder: dynamic.Decoder(t),
+) -> Result(List(t), sqlight.Error) {
+  case sqlight.prepare(sql, connection, decoder) {
+    Ok(prepared) -> {
+      let result = sqlight.query_prepared(prepared, arguments)
+
+      sqlight.query(sql, connection, arguments, decoder)
+      |> should.equal(result)
+
+      sqlight.query_prepared(prepared, arguments)
+      |> should.equal(result)
+
+      result
+    }
+    Error(error) -> {
+      let result = Error(error)
+      sqlight.query(sql, connection, arguments, decoder)
+      |> should.equal(result)
+
+      result
+    }
+  }
+}
+
 pub fn query_1_test() {
   use conn <- connect()
   let assert Ok([#(1, 2, 3), #(4, 5, 6)]) =
-    sqlight.query(
+    prepare_and_query_multiple_times(
       "select 1, 2, 3 union all select 4, 5, 6",
       conn,
       [],
@@ -65,13 +94,18 @@ pub fn query_1_test() {
 pub fn query_2_test() {
   use conn <- connect()
   let assert Ok([1337]) =
-    sqlight.query("select 1337", conn, [], dynamic.element(0, dynamic.int))
+    prepare_and_query_multiple_times(
+      "select 1337",
+      conn,
+      [],
+      dynamic.element(0, dynamic.int),
+    )
 }
 
 pub fn bind_int_test() {
   use conn <- connect()
   let assert Ok([12_345]) =
-    sqlight.query(
+    prepare_and_query_multiple_times(
       "select ?",
       conn,
       [sqlight.int(12_345)],
@@ -82,7 +116,7 @@ pub fn bind_int_test() {
 pub fn bind_float_test() {
   use conn <- connect()
   let assert Ok([12_345.6789]) =
-    sqlight.query(
+    prepare_and_query_multiple_times(
       "select ?",
       conn,
       [sqlight.float(12_345.6789)],
@@ -93,7 +127,7 @@ pub fn bind_float_test() {
 pub fn bind_text_test() {
   use conn <- connect()
   let assert Ok(["hello"]) =
-    sqlight.query(
+    prepare_and_query_multiple_times(
       "select ?",
       conn,
       [sqlight.text("hello")],
@@ -104,7 +138,7 @@ pub fn bind_text_test() {
 pub fn bind_blob_test() {
   use conn <- connect()
   let assert Ok([#(<<123, 0>>, "blob")]) =
-    sqlight.query(
+    prepare_and_query_multiple_times(
       "select ?1, typeof(?1)",
       conn,
       [sqlight.blob(<<123, 0>>)],
@@ -115,7 +149,7 @@ pub fn bind_blob_test() {
 pub fn bind_null_test() {
   use conn <- connect()
   let assert Ok([option.None]) =
-    sqlight.query(
+    prepare_and_query_multiple_times(
       "select ?",
       conn,
       [sqlight.null()],
@@ -126,7 +160,7 @@ pub fn bind_null_test() {
 pub fn bind_bool_test() {
   use conn <- connect()
   let assert Ok([True]) =
-    sqlight.query(
+    prepare_and_query_multiple_times(
       "select ?",
       conn,
       [sqlight.bool(True)],
@@ -140,7 +174,7 @@ pub fn exec_test() {
   let assert Ok(Nil) =
     sqlight.exec("insert into cats (name) values ('Tim')", conn)
   let assert Ok(["Tim"]) =
-    sqlight.query(
+    prepare_and_query_multiple_times(
       "select name from cats",
       conn,
       [],
@@ -176,7 +210,12 @@ pub fn readme_example_test() {
   where age < ?
   "
   let assert Ok([#("Nubi", 4), #("Ginny", 6)]) =
-    sqlight.query(sql, on: conn, with: [sqlight.int(7)], expecting: cat_decoder)
+    prepare_and_query_multiple_times(
+      sql,
+      on: conn,
+      with: [sqlight.int(7)],
+      expecting: cat_decoder,
+    )
 }
 
 pub fn error_syntax_error_test() {
@@ -242,14 +281,20 @@ pub fn decode_error_test() {
     sqlight.GenericError,
     "Decoder failed, expected String, got Int in 0",
     -1,
-  )) = sqlight.query("select 1", conn, [], dynamic.element(0, dynamic.string))
+  )) =
+    prepare_and_query_multiple_times(
+      "select 1",
+      conn,
+      [],
+      dynamic.element(0, dynamic.string),
+    )
 }
 
 pub fn query_error_test() {
   use conn <- sqlight.with_connection(":memory:")
 
   let assert Error(SqlightError(sqlight.GenericError, _, _)) =
-    sqlight.query(
+    prepare_and_query_multiple_times(
       "this isn't a valid query",
       conn,
       [],
@@ -261,7 +306,7 @@ pub fn bind_nullable_test() {
   use conn <- connect()
 
   let assert Ok([option.Some(12_345)]) =
-    sqlight.query(
+    prepare_and_query_multiple_times(
       "select ?",
       conn,
       [sqlight.nullable(sqlight.int, option.Some(12_345))],
@@ -269,10 +314,151 @@ pub fn bind_nullable_test() {
     )
 
   let assert Ok([option.None]) =
-    sqlight.query(
+    prepare_and_query_multiple_times(
       "select ?",
       conn,
       [sqlight.nullable(sqlight.int, option.None)],
       dynamic.element(0, dynamic.optional(dynamic.int)),
     )
+}
+
+pub fn configuration_use_case_test() {
+  use conn <- connect()
+
+  sqlight.exec(
+    "
+CREATE TABLE \"configuration\" (
+	\"key\" TEXT NOT NULL,
+	\"value\" TEXT NOT NULL,
+	\"created_at\" INTEGER NOT NULL,
+	PRIMARY KEY(\"key\", \"created_at\" DESC)
+);
+  ",
+    conn,
+  )
+  |> should.be_ok
+
+  let decoder = dynamic.tuple3(dynamic.string, dynamic.string, dynamic.int)
+
+  let get_sql =
+    "
+SELECT
+  \"key\",
+  \"value\",
+  \"created_at\"
+FROM
+  \"configuration\"
+WHERE
+  \"key\" = ?
+ORDER BY
+  \"created_at\" DESC
+LIMIT 1;
+    "
+
+  let set_sql =
+    "
+INSERT INTO
+  \"configuration\"
+  (\"key\", \"value\", \"created_at\")
+VALUES
+  (?, ?, ?);
+    "
+
+  let get_stmt = sqlight.prepare(get_sql, conn, decoder) |> should.be_ok
+  let set_stmt = sqlight.prepare(set_sql, conn, dynamic.dynamic) |> should.be_ok
+
+  let get_queried = fn(key: String) -> Result(
+    option.Option(String),
+    sqlight.Error,
+  ) {
+    sqlight.query(get_sql, conn, [sqlight.text(key)], decoder)
+    |> result.map(fn(values) {
+      case values {
+        [] -> option.None
+        [value, ..] -> option.Some(value.1)
+      }
+    })
+  }
+  let set_queried = fn(key: String, value: String, now: Int) -> Result(
+    Nil,
+    sqlight.Error,
+  ) {
+    sqlight.query(
+      set_sql,
+      conn,
+      [sqlight.text(key), sqlight.text(value), sqlight.int(now)],
+      dynamic.dynamic,
+    )
+    |> result.map(fn(_) { Nil })
+  }
+
+  let get_prepared = fn(key: String) -> Result(
+    option.Option(String),
+    sqlight.Error,
+  ) {
+    sqlight.query_prepared(get_stmt, [sqlight.text(key)])
+    |> result.map(fn(values) {
+      case values {
+        [] -> option.None
+        [value, ..] -> option.Some(value.1)
+      }
+    })
+  }
+  let set_prepared = fn(key: String, value: String, now: Int) -> Result(
+    Nil,
+    sqlight.Error,
+  ) {
+    sqlight.query_prepared(set_stmt, [
+      sqlight.text(key),
+      sqlight.text(value),
+      sqlight.int(now),
+    ])
+    |> result.map(fn(_) { Nil })
+  }
+
+  list.map(
+    [#(get_queried, set_queried), #(get_prepared, set_prepared)],
+    fn(sql) {
+      let #(get, set) = sql
+      sqlight.exec("DELETE FROM \"configuration\";", conn) |> should.be_ok
+
+      list.map(["test", "a.test", "b.test", "a.test.a"], fn(key) {
+        get(key)
+        |> should.be_ok
+        |> should.be_none
+
+        set(key, key <> "1", 1) |> should.be_ok
+        get(key)
+        |> should.be_ok
+        |> option.map(should.equal(_, key <> "1"))
+        |> should.be_some
+
+        set(key, key <> "3", 3) |> should.be_ok
+        get(key)
+        |> should.be_ok
+        |> option.map(should.equal(_, key <> "3"))
+        |> should.be_some
+
+        set(key, key <> "2", 2) |> should.be_ok
+        get(key)
+        |> should.be_ok
+        |> option.map(should.equal(_, key <> "3"))
+        |> should.be_some
+
+        set(key, key <> "5", 5) |> should.be_ok
+        get(key)
+        |> should.be_ok
+        |> option.map(should.equal(_, key <> "5"))
+        |> should.be_some
+
+        set(key, key <> "0", 0) |> should.be_ok
+        get(key)
+        |> should.be_ok
+        |> option.map(should.equal(_, key <> "5"))
+        |> should.be_some
+
+        set(key, key <> "0", 0) |> should.be_error
+      })
+    },
+  )
 }
