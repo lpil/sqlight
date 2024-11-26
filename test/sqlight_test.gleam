@@ -1,6 +1,7 @@
 import gleam/dynamic
 import gleam/list
 import gleam/option
+import gleam/result
 import gleeunit
 import gleeunit/should
 import sqlight.{SqlightError}
@@ -319,4 +320,145 @@ pub fn bind_nullable_test() {
       [sqlight.nullable(sqlight.int, option.None)],
       dynamic.element(0, dynamic.optional(dynamic.int)),
     )
+}
+
+pub fn configuration_use_case_test() {
+  use conn <- connect()
+
+  sqlight.exec(
+    "
+CREATE TABLE \"configuration\" (
+	\"key\" TEXT NOT NULL,
+	\"value\" TEXT NOT NULL,
+	\"created_at\" INTEGER NOT NULL,
+	PRIMARY KEY(\"key\", \"created_at\" DESC)
+);
+  ",
+    conn,
+  )
+  |> should.be_ok
+
+  let decoder = dynamic.tuple3(dynamic.string, dynamic.string, dynamic.int)
+
+  let get_sql =
+    "
+SELECT
+  \"key\",
+  \"value\",
+  \"created_at\"
+FROM
+  \"configuration\"
+WHERE
+  \"key\" = ?
+ORDER BY
+  \"created_at\" DESC
+LIMIT 1;
+    "
+
+  let set_sql =
+    "
+INSERT INTO
+  \"configuration\"
+  (\"key\", \"value\", \"created_at\")
+VALUES
+  (?, ?, ?);
+    "
+
+  let get_stmt = sqlight.prepare(get_sql, conn, decoder) |> should.be_ok
+  let set_stmt = sqlight.prepare(set_sql, conn, dynamic.dynamic) |> should.be_ok
+
+  let get_queried = fn(key: String) -> Result(
+    option.Option(String),
+    sqlight.Error,
+  ) {
+    sqlight.query(get_sql, conn, [sqlight.text(key)], decoder)
+    |> result.map(fn(values) {
+      case values {
+        [] -> option.None
+        [value, ..] -> option.Some(value.1)
+      }
+    })
+  }
+  let set_queried = fn(key: String, value: String, now: Int) -> Result(
+    Nil,
+    sqlight.Error,
+  ) {
+    sqlight.query(
+      set_sql,
+      conn,
+      [sqlight.text(key), sqlight.text(value), sqlight.int(now)],
+      dynamic.dynamic,
+    )
+    |> result.map(fn(_) { Nil })
+  }
+
+  let get_prepared = fn(key: String) -> Result(
+    option.Option(String),
+    sqlight.Error,
+  ) {
+    sqlight.query_prepared(get_stmt, [sqlight.text(key)])
+    |> result.map(fn(values) {
+      case values {
+        [] -> option.None
+        [value, ..] -> option.Some(value.1)
+      }
+    })
+  }
+  let set_prepared = fn(key: String, value: String, now: Int) -> Result(
+    Nil,
+    sqlight.Error,
+  ) {
+    sqlight.query_prepared(set_stmt, [
+      sqlight.text(key),
+      sqlight.text(value),
+      sqlight.int(now),
+    ])
+    |> result.map(fn(_) { Nil })
+  }
+
+  list.map(
+    [#(get_queried, set_queried), #(get_prepared, set_prepared)],
+    fn(sql) {
+      let #(get, set) = sql
+      sqlight.exec("DELETE FROM \"configuration\";", conn) |> should.be_ok
+
+      list.map(["test", "a.test", "b.test", "a.test.a"], fn(key) {
+        get(key)
+        |> should.be_ok
+        |> should.be_none
+
+        set(key, key <> "1", 1) |> should.be_ok
+        get(key)
+        |> should.be_ok
+        |> option.map(should.equal(_, key <> "1"))
+        |> should.be_some
+
+        set(key, key <> "3", 3) |> should.be_ok
+        get(key)
+        |> should.be_ok
+        |> option.map(should.equal(_, key <> "3"))
+        |> should.be_some
+
+        set(key, key <> "2", 2) |> should.be_ok
+        get(key)
+        |> should.be_ok
+        |> option.map(should.equal(_, key <> "3"))
+        |> should.be_some
+
+        set(key, key <> "5", 5) |> should.be_ok
+        get(key)
+        |> should.be_ok
+        |> option.map(should.equal(_, key <> "5"))
+        |> should.be_some
+
+        set(key, key <> "0", 0) |> should.be_ok
+        get(key)
+        |> should.be_ok
+        |> option.map(should.equal(_, key <> "5"))
+        |> should.be_some
+
+        set(key, key <> "0", 0) |> should.be_error
+      })
+    },
+  )
 }
