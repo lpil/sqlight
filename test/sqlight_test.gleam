@@ -1,4 +1,4 @@
-import gleam/dynamic
+import gleam/dynamic/decode
 import gleam/list
 import gleam/option
 import gleeunit
@@ -54,18 +54,23 @@ pub fn with_connection_test() {
 pub fn query_1_test() {
   use conn <- connect()
   let assert Ok([#(1, 2, 3), #(4, 5, 6)]) =
-    sqlight.query(
-      "select 1, 2, 3 union all select 4, 5, 6",
-      conn,
-      [],
-      dynamic.tuple3(dynamic.int, dynamic.int, dynamic.int),
-    )
+    sqlight.query("select 1, 2, 3 union all select 4, 5, 6", conn, [], {
+      use one <- decode.field(0, decode.int)
+      use two <- decode.field(1, decode.int)
+      use three <- decode.field(2, decode.int)
+      decode.success(#(one, two, three))
+    })
 }
 
 pub fn query_2_test() {
   use conn <- connect()
   let assert Ok([1337]) =
-    sqlight.query("select 1337", conn, [], dynamic.element(0, dynamic.int))
+    sqlight.query(
+      "select 1337",
+      conn,
+      [],
+      decode.field(0, decode.int, decode.success),
+    )
 }
 
 pub fn bind_int_test() {
@@ -75,7 +80,7 @@ pub fn bind_int_test() {
       "select ?",
       conn,
       [sqlight.int(12_345)],
-      dynamic.element(0, dynamic.int),
+      decode.field(0, decode.int, decode.success),
     )
 }
 
@@ -86,7 +91,7 @@ pub fn bind_float_test() {
       "select ?",
       conn,
       [sqlight.float(12_345.6789)],
-      dynamic.element(0, dynamic.float),
+      decode.field(0, decode.float, decode.success),
     )
 }
 
@@ -97,19 +102,18 @@ pub fn bind_text_test() {
       "select ?",
       conn,
       [sqlight.text("hello")],
-      dynamic.element(0, dynamic.string),
+      decode.field(0, decode.string, decode.success),
     )
 }
 
 pub fn bind_blob_test() {
   use conn <- connect()
   let assert Ok([#(<<123, 0>>, "blob")]) =
-    sqlight.query(
-      "select ?1, typeof(?1)",
-      conn,
-      [sqlight.blob(<<123, 0>>)],
-      dynamic.tuple2(dynamic.bit_array, dynamic.string),
-    )
+    sqlight.query("select ?1, typeof(?1)", conn, [sqlight.blob(<<123, 0>>)], {
+      use ary <- decode.field(0, decode.bit_array)
+      use str <- decode.field(1, decode.string)
+      decode.success(#(ary, str))
+    })
 }
 
 pub fn bind_null_test() {
@@ -119,7 +123,7 @@ pub fn bind_null_test() {
       "select ?",
       conn,
       [sqlight.null()],
-      dynamic.element(0, dynamic.optional(dynamic.int)),
+      decode.field(0, decode.optional(decode.int), decode.success),
     )
 }
 
@@ -130,7 +134,7 @@ pub fn bind_bool_test() {
       "select ?",
       conn,
       [sqlight.bool(True)],
-      dynamic.element(0, sqlight.decode_bool),
+      decode.field(0, sqlight.decode_bool(), decode.success),
     )
 }
 
@@ -144,7 +148,7 @@ pub fn exec_test() {
       "select name from cats",
       conn,
       [],
-      dynamic.element(0, dynamic.string),
+      decode.field(0, decode.string, decode.success),
     )
 }
 
@@ -157,7 +161,11 @@ pub fn exec_fail_test() {
 
 pub fn readme_example_test() {
   use conn <- sqlight.with_connection(":memory:")
-  let cat_decoder = dynamic.tuple2(dynamic.string, dynamic.int)
+  let cat_decoder = {
+    use name <- decode.field(0, decode.string)
+    use age <- decode.field(1, decode.int)
+    decode.success(#(name, age))
+  }
 
   let sql =
     "
@@ -242,7 +250,13 @@ pub fn decode_error_test() {
     sqlight.GenericError,
     "Decoder failed, expected String, got Int in 0",
     -1,
-  )) = sqlight.query("select 1", conn, [], dynamic.element(0, dynamic.string))
+  )) =
+    sqlight.query(
+      "select 1",
+      conn,
+      [],
+      decode.field(0, decode.string, decode.success),
+    )
 }
 
 pub fn query_error_test() {
@@ -253,7 +267,7 @@ pub fn query_error_test() {
       "this isn't a valid query",
       conn,
       [],
-      dynamic.element(0, dynamic.int),
+      decode.field(0, decode.int, decode.success),
     )
 }
 
@@ -265,7 +279,7 @@ pub fn bind_nullable_test() {
       "select ?",
       conn,
       [sqlight.nullable(sqlight.int, option.Some(12_345))],
-      dynamic.element(0, dynamic.optional(dynamic.int)),
+      decode.field(0, decode.optional(decode.int), decode.success),
     )
 
   let assert Ok([option.None]) =
@@ -273,6 +287,6 @@ pub fn bind_nullable_test() {
       "select ?",
       conn,
       [sqlight.nullable(sqlight.int, option.None)],
-      dynamic.element(0, dynamic.optional(dynamic.int)),
+      decode.field(0, decode.optional(decode.int), decode.success),
     )
 }

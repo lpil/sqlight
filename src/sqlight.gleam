@@ -1,4 +1,4 @@
-import gleam/dynamic.{type Decoder, type Dynamic}
+import gleam/dynamic/decode.{type Decoder, type Dynamic}
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
@@ -383,7 +383,7 @@ pub fn query(
 ) -> Result(List(t), Error) {
   use rows <- result.then(run_query(sql, connection, arguments))
   use rows <- result.then(
-    list.try_map(over: rows, with: decoder)
+    list.try_map(over: rows, with: fn(row) { decode.run(row, decoder) })
     |> result.map_error(decode_error),
   )
   Ok(rows)
@@ -468,16 +468,17 @@ pub fn null() -> Value
 ///
 /// Decodes 0 as `False` and any other integer as `True`.
 ///
-pub fn decode_bool(value: Dynamic) -> Result(Bool, List(dynamic.DecodeError)) {
-  case dynamic.int(value) {
-    Ok(0) -> Ok(False)
-    Ok(_) -> Ok(True)
-    Error(e) -> Error(e)
+pub fn decode_bool() -> Decoder(Bool) {
+  use b <- decode.then(decode.int)
+
+  case b {
+    0 -> decode.success(False)
+    _ -> decode.success(True)
   }
 }
 
-fn decode_error(errors: List(dynamic.DecodeError)) -> Error {
-  let assert [dynamic.DecodeError(expected, actual, path), ..] = errors
+fn decode_error(errors: List(decode.DecodeError)) -> Error {
+  let assert [decode.DecodeError(expected, actual, path), ..] = errors
   let path = string.join(path, ".")
   let message =
     "Decoder failed, expected "
