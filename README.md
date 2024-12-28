@@ -12,12 +12,16 @@ gleam add sqlight
 ```
 
 ```gleam
-import gleam/dynamic
+import gleam/dynamic/decode
 import sqlight
 
 pub fn main() {
   use conn <- sqlight.with_connection(":memory:")
-  let cat_decoder = dynamic.tuple2(dynamic.string, dynamic.int)
+  let cat_decoder = {
+    use name <- decode.field(0, decode.string)
+    use age <- decode.field(1, decode.int)
+    decode.success(#(name, age))
+  }
 
   let sql = "
   create table cats (name text, age int);
