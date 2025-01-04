@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.0.0 - 2025-01-04
+
+- Updated to use `gleam/dynamic/decode`.
+
 ## v0.9.1 - 2024-08-19
 
 - Fixed a bug where bit arrays could bind to the incorrect SQLite type.
