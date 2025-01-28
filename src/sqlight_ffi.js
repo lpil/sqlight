@@ -16,7 +16,6 @@ export function coerce_value(value) {
 }
 
 export function coerce_blob(value) {
-  console.log(value);
   return value.buffer;
 }
 
