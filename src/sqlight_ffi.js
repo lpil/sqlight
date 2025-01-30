@@ -43,6 +43,16 @@ export function query(sql, connection, parameters) {
   return new Ok(List.fromArray(rows));
 }
 
+export function query_entries(sql, connection, parameters) {
+  let rows;
+  try {
+    rows = connection.queryEntries(sql, parameters.toArray());
+  } catch (error) {
+    return convert_error(error);
+  }
+  return new Ok(List.fromArray(rows));
+}
+
 export function null_() {
   return undefined;
 }
