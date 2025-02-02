@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.0.0 - 2025-02-02
+
+- Removed a debug statement.
+
 ## v1.0.0 - 2025-01-04
 
 - Updated to use `gleam/dynamic/decode`.
