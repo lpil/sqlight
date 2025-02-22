@@ -17,11 +17,6 @@ import sqlight
 
 pub fn main() {
   use conn <- sqlight.with_connection(":memory:")
-  let cat_decoder = {
-    use name <- decode.field(0, decode.string)
-    use age <- decode.field(1, decode.int)
-    decode.success(#(name, age))
-  }
 
   let sql = "
   create table cats (name text, age int);
@@ -32,6 +27,12 @@ pub fn main() {
   ('Ginny', 6);
   "
   let assert Ok(Nil) = sqlight.exec(sql, conn)
+
+  let cat_decoder = {
+    use name <- decode.field(0, decode.string)
+    use age <- decode.field(1, decode.int)
+    decode.success(#(name, age))
+  }
 
   let sql = "
   select name, age from cats
