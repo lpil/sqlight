@@ -58,7 +58,7 @@ You can also use in-memory databases with SQLite, which may be useful for testin
 
 ## Implementation
 
-When running on Erlang is library wrapper around the excellent Erlang library
+When running on Erlang it is a library wrapper around the excellent Erlang library
 [esqlite](https://hex.pm/packages/esqlite), which in turn is a wrapper around
 the SQLite C library. It is implemented as a NIF, which means that the SQLite
 database engine is linked to the erlang virtual machine.
