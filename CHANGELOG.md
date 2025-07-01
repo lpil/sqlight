@@ -1,6 +1,10 @@
 # Changelog
 
-## v1.0.0 - 2025-02-02
+## v1.0.2 - 2025-07-01
+
+- Updated for latest `gleam_stdlib`.
+
+## v1.0.1 - 2025-02-02
 
 - Removed a debug statement.
 

@@ -347,7 +347,7 @@ pub fn close(connection: Connection) -> Result(Nil, Error) {
   close_(connection)
 }
 
-/// Open a connection to a SQLite database and execute a function with it, then
+/// Open a connection to a SQLite database and execute a function with it,.try
 /// close the connection.
 ///
 /// This function works well with a `use` expression to automatically close the
@@ -381,8 +381,8 @@ pub fn query(
   with arguments: List(Value),
   expecting decoder: Decoder(t),
 ) -> Result(List(t), Error) {
-  use rows <- result.then(run_query(sql, connection, arguments))
-  use rows <- result.then(
+  use rows <- result.try(run_query(sql, connection, arguments))
+  use rows <- result.try(
     list.try_map(over: rows, with: fn(row) { decode.run(row, decoder) })
     |> result.map_error(decode_error),
   )
@@ -469,7 +469,7 @@ pub fn null() -> Value
 /// Decodes 0 as `False` and any other integer as `True`.
 ///
 pub fn decode_bool() -> Decoder(Bool) {
-  use b <- decode.then(decode.int)
+  use b <- decode.try(decode.int)
 
   case b {
     0 -> decode.success(False)
