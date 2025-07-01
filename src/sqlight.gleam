@@ -469,7 +469,7 @@ pub fn null() -> Value
 /// Decodes 0 as `False` and any other integer as `True`.
 ///
 pub fn decode_bool() -> Decoder(Bool) {
-  use b <- decode.try(decode.int)
+  use b <- decode.then(decode.int)
 
   case b {
     0 -> decode.success(False)
