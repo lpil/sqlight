@@ -1,6 +1,6 @@
 import { List, Ok, Error as GlError } from "./gleam.mjs";
 import { SqlightError, error_code_from_int } from "./sqlight.mjs";
-import { DB } from "https://deno.land/x/sqlite@v3.7.0/mod.ts";
+import { DB } from "https://deno.land/x/sqlite@v3.9.1/mod.ts";
 
 export function open(path) {
   return new Ok(new DB(path));
