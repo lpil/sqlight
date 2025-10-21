@@ -1,5 +1,5 @@
 name = "sqlight"
-version = "1.0.2"
+version = "1.0.3"
 licences = ["Apache-2.0"]
 description = "Use SQLite from Gleam!"
 

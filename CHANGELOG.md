@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.0.3 - 2025-10-21
+
+- Remove version specifier for Deno `x/sqlite` import.
+
 ## v1.0.2 - 2025-07-01
 
 - Updated for latest `gleam_stdlib`.
@@ -39,7 +43,7 @@
 
 ## v0.5.0 - 2023-01-08
 
-- This library now works on JavaScript with the Deno runtime. 
+- This library now works on JavaScript with the Deno runtime.
 - The `status` function has been removed.
 
 ## v0.4.0 - 2023-01-02
