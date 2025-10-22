@@ -389,9 +389,31 @@ pub fn query(
   Ok(rows)
 }
 
+pub fn query_entries(
+  sql: String,
+  on connection: Connection,
+  with arguments: List(Value),
+  expecting decoder: Decoder(t),
+) -> Result(List(t), Error) {
+  use rows <- result.then(run_query_entries(sql, connection, arguments))
+  use rows <- result.then(
+    list.try_map(over: rows, with: fn(row) { decode.run(row, decoder) })
+    |> result.map_error(decode_error),
+  )
+  Ok(rows)
+}
+
 @external(erlang, "sqlight_ffi", "query")
 @external(javascript, "./sqlight_ffi.js", "query")
 fn run_query(
+  a: String,
+  b: Connection,
+  c: List(Value),
+) -> Result(List(Dynamic), Error)
+
+@external(erlang, "sqlight_ffi", "query_entries")
+@external(javascript, "./sqlight_ffi.js", "query_entries")
+fn run_query_entries(
   a: String,
   b: Connection,
   c: List(Value),

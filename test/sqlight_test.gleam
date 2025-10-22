@@ -73,6 +73,16 @@ pub fn query_2_test() {
     )
 }
 
+pub fn query_entries_test() {
+  use conn <- connect()
+  let assert Ok([#(1337, "wibble")]) =
+    sqlight.query_entries("select 1337 as col_a, 'wibble' as col_b", conn, [], {
+      use col_b <- decode.field("col_b", decode.string)
+      use col_a <- decode.field("col_a", decode.int)
+      decode.success(#(col_a, col_b))
+    })
+}
+
 pub fn bind_int_test() {
   use conn <- connect()
   let assert Ok([12_345]) =
