@@ -19,7 +19,7 @@ pub type Error {
     code: ErrorCode,
     message: String,
     /// If the most recent error references a specific token in the input SQL,
-    /// this is the byte offset of the start of that token. 
+    /// this is the byte offset of the start of that token.
     /// If the most recent error does not reference a specific token, this is -1.
     offset: Int,
   )
@@ -320,15 +320,15 @@ fn close_(a: Connection) -> Result(Nil, Error)
 /// ```gleam
 /// let assert Ok(conn) = open("file:data.sqlite3")
 /// ```
-/// 
+///
 /// ## Opens "data.db" in read only mode with a private cache
-/// 
+///
 /// ```gleam
 /// let assert Ok(conn) = open("file:data.db?mode=ro&cache=private")
 /// ```
-/// 
-/// Opens a shared memory database named memdb1 with a shared cache. 
-/// 
+///
+/// Opens a shared memory database named memdb1 with a shared cache.
+///
 /// ```gleam
 /// let assert Ok(conn) = open("file:memdb1?mode=memory&cache=shared")
 /// ```
@@ -347,7 +347,7 @@ pub fn close(connection: Connection) -> Result(Nil, Error) {
   close_(connection)
 }
 
-/// Open a connection to a SQLite database and execute a function with it,.try
+/// Open a connection to a SQLite database and execute a function with it, then
 /// close the connection.
 ///
 /// This function works well with a `use` expression to automatically close the
@@ -371,10 +371,19 @@ pub fn with_connection(path: String, f: fn(Connection) -> a) -> a {
   value
 }
 
+/// Execute one or more sql statements without returning the results.
 pub fn exec(sql: String, on connection: Connection) -> Result(Nil, Error) {
   exec_(sql, connection)
 }
 
+/// Execute a sql statement and try to decode the result.
+///
+/// # Caveats
+///
+/// Only the first semicolon delimited sql statement will be executed.
+///
+/// Use `exec()` if you need to run some other statements before
+/// doing the select (e.g., attaching another database in this connection).
 pub fn query(
   sql: String,
   on connection: Connection,
