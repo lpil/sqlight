@@ -371,19 +371,21 @@ pub fn with_connection(path: String, f: fn(Connection) -> a) -> a {
   value
 }
 
-/// Execute one or more sql statements without returning the results.
+/// Execute one or more SQL statements without returning the results.
+///
 pub fn exec(sql: String, on connection: Connection) -> Result(Nil, Error) {
   exec_(sql, connection)
 }
 
 /// Execute a sql statement and try to decode the result.
 ///
-/// # Caveats
+/// ## Running multiple queries
 ///
-/// Only the first semicolon delimited sql statement will be executed.
+/// SQLite's `query` function will only run a single SQL query. If you have
+/// multiple queries in the string only the first one will be executed, and the
+/// others discarded.
+/// Use `exec` if you want to run run multiple queries in a single function call.
 ///
-/// Use `exec()` if you need to run some other statements before
-/// doing the select (e.g., attaching another database in this connection).
 pub fn query(
   sql: String,
   on connection: Connection,
