@@ -1,7 +1,7 @@
 -module(sqlight_ffi).
 
 -export([
-    status/0, query/3, exec/2, coerce_value/1, coerce_blob/1, null/0, open/1, close/1
+    status/0, query/3, query_entries/3, exec/2, coerce_value/1, coerce_blob/1, null/0, open/1, close/1
 ]).
 
 open(Name) ->
@@ -22,6 +22,17 @@ query(Sql, Connection, Arguments) when is_binary(Sql) ->
     case esqlite3:q(Connection, Sql, Arguments) of
         {error, Code} -> to_error(Connection, Code);
         Rows -> {ok, lists:map(fun erlang:list_to_tuple/1, Rows)}
+    end.
+
+query_entries(Sql, Connection, Arguments) when is_binary(Sql) ->
+    case esqlite3:prepare(Connection, Sql, Arguments) of
+        {error, Code} -> to_error(Connection, Code);
+        {ok, Stmt} ->
+            ColumnNames = esqlite3:column_names(Stmt),
+            case esqlite3:fetchall(Stmt) of
+                {error, Code} -> to_error(Connection, Code);
+                Rows -> {ok, lists:map(fun(Row) -> maps:from_list(lists:zip(ColumnNames, Row)) end, Rows)}
+            end
     end.
 
 exec(Sql, Connection) ->
